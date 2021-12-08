@@ -1,0 +1,70 @@
+# port 端口
+# e.g :80
+port: :80
+
+# model 模式 debug|release
+# debug模式，可以输出更加详细的日志，但是运行速度会减慢
+model: debug
+
+# processorNum 分发并行数
+processorNum: 5
+
+# 站内信发送地址
+messageAPI: http://%s:80/api/v1/message/send
+
+# syncChannel 内部分布式同步
+syncChannel: dispatcher:task:listen:rest
+
+#  -------------------- hand out --------------------
+handout:
+  deadline: 30
+  dialTimeout: 30
+  maxIdleConns: 10
+
+#  -------------------- log --------------------
+# comply with zap log specification
+log:
+  level: -1
+  development: false
+  sampling:
+    initial: 100
+    thereafter: 100
+  outputPath:
+    - stderr
+  errorOutputPath:
+    - stderr
+
+#  -------------------- internalNet --------------------
+internalNet:
+  timeout: 20
+  maxIdleConns: 10
+
+# -------------------- kafka --------------------
+kafka:
+  broker:
+    - 192.168.200.29:9092
+    - 192.168.200.30:9092
+    - 192.168.200.31:9092
+# -------------------- kafka --------------------  
+mysql: 
+  host: 192.168.200.18:3306
+  db: message
+  user: root
+  password: uyWxtvt6gCOy3VPLB3rTpa0rQ
+  log: true
+
+redis:
+  addrs:
+    - 192.168.200.18:6379
+    - 192.168.200.19:6379
+    - 192.168.200.20:6379
+  username:
+  password:
+
+
+email:
+  emails:
+    - { emailfrom: "your email host",username: "user name",aliasname: "alias name",password: "password",host: "host",port: 0 }
+#token验证
+auth:
+  checktoken: http://jwt/api/v1/jwt/check
