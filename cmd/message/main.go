@@ -7,6 +7,7 @@ import (
 	"github.com/quanxiang-cloud/message/api/restful"
 	"github.com/quanxiang-cloud/message/internal/core"
 	"github.com/quanxiang-cloud/message/package/config"
+	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
 )
 
 func main() {
@@ -34,8 +35,18 @@ func main() {
 		panic(err)
 	}
 
+	manager, err := wm.NewManager(ctx)
+	if err != nil {
+		panic(err)
+	}
+	ws, err := restful.NewWebsocket(ctx, manager)
+	if err != nil {
+		panic(err)
+	}
+
 	client, err := restful.NewRouter(ctx, conf, []restful.RouterOption{
 		restful.WithBus(bus),
+		restful.WithWebSocket(ctx, ws),
 	})
 
 	if err != nil {

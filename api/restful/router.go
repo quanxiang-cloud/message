@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/message/internal/core"
 	"github.com/quanxiang-cloud/message/package/config"
+	"github.com/quanxiang-cloud/message/pkg/component"
+	"github.com/quanxiang-cloud/message/pkg/component/letter"
 )
 
 const (
@@ -75,6 +77,22 @@ func WithBus(bus *core.Bus) RouterOption {
 
 			c.JSON(http.StatusOK, resp)
 		})
+		return nil
+	}
+}
+
+func WithWebSocket(ctx context.Context, ws *Websocket) RouterOption {
+	return func(rg *gin.RouterGroup) error {
+		rg.GET("/ws", ws.Handler)
+
+		sender, err := letter.New(ctx)
+		if err != nil {
+			return err
+		}
+
+		_ = component.New(ctx,
+			sender,
+			component.WithRouter(rg.Group("/letter")))
 		return nil
 	}
 }
