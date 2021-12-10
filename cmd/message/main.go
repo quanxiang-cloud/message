@@ -51,7 +51,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	ws, err := restful.NewWebsocket(ctx, manager)
+	ws, err := restful.NewWebsocket(ctx, conf, manager)
 	if err != nil {
 		panic(err)
 	}

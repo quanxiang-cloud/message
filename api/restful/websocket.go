@@ -5,43 +5,52 @@ import (
 	"encoding/json"
 	"net/http"
 
+	ct "git.internal.yunify.com/qxp/misc/client"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/quanxiang-cloud/message/package/config"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
+	client "github.com/quanxiang-cloud/message/pkg/quanxiang"
 )
 
 type Websocket struct {
 	manager *wm.Manager
+
+	warden client.Warden
 }
 
-func NewWebsocket(ctx context.Context, manager *wm.Manager) (*Websocket, error) {
+func NewWebsocket(ctx context.Context, conf *config.Config, manager *wm.Manager) (*Websocket, error) {
 	return &Websocket{
 		manager: manager,
+		warden: client.NewOWarden(ct.Config{
+			Timeout:      conf.InternalNet.Timeout,
+			MaxIdleConns: conf.InternalNet.MaxIdleConns,
+		}),
 	}, nil
 }
 
-//Handler  Handler
+//Handler Handler
 func (w *Websocket) Handler(c *gin.Context) {
-	// token := c.Query("token")
-	// if token == "" {
-	// 	c.AbortWithStatus(http.StatusUnauthorized)
-	// 	return
-	// }
-	// ctx := logger.CTXTransfer(c)
-	// profile, err := w.oauth2s.CheckToken(ctx, token, config.Conf.AUth.CheckToken)
-	// if err != nil {
-	// 	c.AbortWithStatus(http.StatusUnauthorized)
-	// 	return
-	// }
+	token := c.Query("token")
+	if token == "" {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	ctx := context.Background()
+
+	profile, err := w.warden.CheckToken(ctx, token, config.Conf.AUth.CheckToken)
+	if err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 
 	wsConn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		http.NotFound(c.Writer, c.Request)
 		return
 	}
-	ctx := context.Background()
 
-	client, err := w.manager.Register(ctx, "1", wsConn)
+	client, err := w.manager.Register(ctx, profile.UserID, wsConn)
 	if err != nil {
 		w.manager.UnRegister(ctx, client)
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -60,7 +69,7 @@ func (w *Websocket) Handler(c *gin.Context) {
 	}
 
 	_, err = w.manager.Send(ctx, &wm.SendReq{
-		ID:      "1",
+		ID:      profile.UserID,
 		Content: pong,
 	})
 	if err != nil {

@@ -3,6 +3,7 @@ module github.com/quanxiang-cloud/message
 go 1.16
 
 require (
+	git.internal.yunify.com/qxp/message v0.0.0-20211206102124-8449441d2d58
 	git.internal.yunify.com/qxp/misc v0.0.0-20211201085933-afa612873ef1
 	github.com/dapr/go-sdk v1.3.0
 	github.com/gin-gonic/gin v1.6.3

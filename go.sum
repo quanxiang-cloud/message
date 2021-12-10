@@ -37,6 +37,9 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 contrib.go.opencensus.io/exporter/prometheus v0.2.0/go.mod h1:TYmVAyE8Tn1lyPcltF5IYYfWp2KHu7lQGIZnj8iZMys=
 contrib.go.opencensus.io/exporter/zipkin v0.1.1/go.mod h1:GMvdSl3eJ2gapOaLKzTKE3qDgUkJ86k9k3yY2eqwkzc=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+git.internal.yunify.com/qxp/message v0.0.0-20211206102124-8449441d2d58 h1:R2h9HO0CgZgOCOKFP/IgoE+czLEbPxJ3XDJ/f+gOrdA=
+git.internal.yunify.com/qxp/message v0.0.0-20211206102124-8449441d2d58/go.mod h1:G7/LFpIhK2TS/1yOMHtQzxUgRxWjg76q7AlIm7KiDII=
+git.internal.yunify.com/qxp/misc v0.0.0-20210706094822-95d4b1ab0f87/go.mod h1:W42omH0agqE7vK5zcw3DO/h0pXoRqGqeTYzAf+TM27o=
 git.internal.yunify.com/qxp/misc v0.0.0-20211201085933-afa612873ef1 h1:E3cEvY3hkeOiF9PoZh6Vsz6ISRZ3z9P0lyECbDO312E=
 git.internal.yunify.com/qxp/misc v0.0.0-20211201085933-afa612873ef1/go.mod h1:W42omH0agqE7vK5zcw3DO/h0pXoRqGqeTYzAf+TM27o=
 github.com/AdhityaRamadhanus/fasthttpcors v0.0.0-20170121111917-d4c07198763a/go.mod h1:C0A1KeiVHs+trY6gUTPhhGammbrZ30ZfXRW/nuT7HLw=
@@ -969,6 +972,7 @@ github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271/go.mod h1:AZpEONHx3
 github.com/streadway/handy v0.0.0-20190108123426-d5acb3125c2a/go.mod h1:qNTQ5P5JnDBl6z3cMAg/SywNDC5ABu5ApDIw6lUbRmI=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.1.1/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/objx v0.2.0 h1:Hbg2NidpLE8veEBkEZTL3CvlkUIVzuU9jDplZO54c48=
 github.com/stretchr/objx v0.2.0/go.mod h1:qt09Ya8vawLte6SNmTgCsAVtYtaKzEcn8ATUoHMkEqE=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
