@@ -3,8 +3,8 @@ kind: Subscription
 metadata:
   name: message-letter
 spec:
-  topic: default.Letter
-  route:  /api/v1/message/letter/send
+  topic: lowcode.Letter
+  route:  /send
   pubsubname: message-kafka-pubsub
 scopes:
-- message.manager
+- message-letter

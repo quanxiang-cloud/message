@@ -1,0 +1,50 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: message-letter-dapr
+spec:
+  ports:
+    - name: web
+      protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app: letter-dapr
+  type: ClusterIP
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: letter-dapr
+  namespace: lowcode
+  labels:
+    app: letter-dapr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: letter-dapr
+  template:
+    metadata:
+      labels:
+        app: letter-dapr
+      annotations:
+        dapr.io/app-id: message-letter
+        dapr.io/app-port: '80'
+        dapr.io/enabled: 'true'
+    spec:
+      containers:
+        - name: container-gxic5a
+          image: 'dockerhub.qingcloud.com/lowcode/letter:alpha1'
+          args:
+            - '--port=:80'
+            - '--message-server=http://message-manager-dapr'
+          ports:
+            - name: web
+              containerPort: 80
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: docker
+      affinity: {}

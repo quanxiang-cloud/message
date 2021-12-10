@@ -1,4 +1,30 @@
-# letter:
-#   dapr run -d /Users/went/Documents/dapr/message --app-id sub1 -p 8080 go run cmd/letter/main.go
-manager:
-  dapr run -d ./configs/dapr --app-id message.manager -p 80 -- go run cmd/message/main.go --config ./configs/config.yml --pubsubName message-kafka-pubsub
+CONF ?=$(shell pwd)/configs
+MESSAGE_SERVER ?=http://127.0.0.1:80
+MESSAGE_PORT ?=80
+LETTER_PORT ?=8080
+PUBSUB_NAME ?=message-kafka-pubsub
+
+REPO ?=dockerhub.qingcloud.com/lowcode
+TAG ?=latest
+
+NAMESPACE ?=lowcode
+
+generate:
+	go generate ./...
+run-letter: generate
+	dapr run -d ${CONF}/deploy --app-id message-letter -p ${LETTER_PORT} -- go run cmd/letter/main.go --port :${LETTER_PORT} --message-server ${MESSAGE_SERVER}
+
+run-manager: generate
+	dapr run -d ${CONF}/deploy --app-id message-manager -p ${MESSAGE_PORT} -- go run cmd/message/main.go --config ${CONF}/config.yml --pubsub-name ${PUBSUB_NAME}
+
+docker-build-letter: generate
+	KO_DOCKER_REPO=${REPO} ko build -t=${TAG} -B --platform linux/amd64 ./cmd/letter/.
+
+docker-build-message: generate
+	KO_DOCKER_REPO=${REPO} ko build -t=${TAG} -B --platform linux/amd64 ./cmd/message/.
+
+deploy:
+	kubectl apply -n ${NAMESPACE} -f ${CONF}/deploy
+
+undeploy:
+	kubectl delete -n ${NAMESPACE} -f ${CONF}/deploy

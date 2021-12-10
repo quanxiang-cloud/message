@@ -5,11 +5,12 @@ import (
 	"net/http"
 
 	"git.internal.yunify.com/qxp/misc/logger"
+	"git.internal.yunify.com/qxp/misc/resp"
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/message/internal/core"
+	"github.com/quanxiang-cloud/message/internal/service"
 	"github.com/quanxiang-cloud/message/package/config"
-	"github.com/quanxiang-cloud/message/pkg/component"
-	"github.com/quanxiang-cloud/message/pkg/component/letter"
+	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
 )
 
 const (
@@ -57,6 +58,43 @@ func (r *Router) Close() {
 
 type RouterOption func(*gin.RouterGroup) error
 
+func WithSender(cz *service.CacheZone, manager *wm.Manager) RouterOption {
+	return func(g *gin.RouterGroup) error {
+		g.POST("/publish", func(c *gin.Context) {
+			req := new(service.PublishReq)
+			err := c.ShouldBind(req)
+			if err != nil {
+				c.AbortWithError(http.StatusBadRequest, err)
+				return
+			}
+
+			_, err = cz.Publish(context.Background(), req)
+			if err != nil {
+				c.AbortWithError(http.StatusBadRequest, err)
+				return
+			}
+			resp.Format(nil, nil)
+		})
+
+		g.POST("/write", func(c *gin.Context) {
+			req := new(wm.SendReq)
+			err := c.ShouldBind(req)
+			if err != nil {
+				c.AbortWithError(http.StatusBadRequest, err)
+				return
+			}
+
+			_, err = manager.Send(context.Background(), req)
+			if err != nil {
+				c.AbortWithError(http.StatusBadRequest, err)
+				return
+			}
+			resp.Format(nil, nil)
+		})
+		return nil
+	}
+}
+
 func WithBus(bus *core.Bus) RouterOption {
 	return func(g *gin.RouterGroup) error {
 		g.POST("/send", func(c *gin.Context) {
@@ -84,15 +122,6 @@ func WithBus(bus *core.Bus) RouterOption {
 func WithWebSocket(ctx context.Context, ws *Websocket) RouterOption {
 	return func(rg *gin.RouterGroup) error {
 		rg.GET("/ws", ws.Handler)
-
-		sender, err := letter.New(ctx)
-		if err != nil {
-			return err
-		}
-
-		_ = component.New(ctx,
-			sender,
-			component.WithRouter(rg.Group("/letter")))
 		return nil
 	}
 }

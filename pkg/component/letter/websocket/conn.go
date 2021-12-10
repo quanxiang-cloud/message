@@ -37,7 +37,6 @@ func (c *Connect) Read() <-chan []byte {
 			if err != nil {
 				break
 			}
-
 			mc <- message
 		}
 	}(mc)

@@ -6,20 +6,8 @@ port: :80
 # debug模式，可以输出更加详细的日志，但是运行速度会减慢
 model: debug
 
-# processorNum 分发并行数
-processorNum: 5
-
 # 站内信发送地址
-messageAPI: http://%s:80/api/v1/message/send
-
-# syncChannel 内部分布式同步
-syncChannel: dispatcher:task:listen:rest
-
-#  -------------------- hand out --------------------
-handout:
-  deadline: 30
-  dialTimeout: 30
-  maxIdleConns: 10
+messageAPI: http://%s:80
 
 #  -------------------- log --------------------
 # comply with zap log specification
@@ -39,13 +27,7 @@ internalNet:
   timeout: 20
   maxIdleConns: 10
 
-# -------------------- kafka --------------------
-kafka:
-  broker:
-    - 192.168.200.29:9092
-    - 192.168.200.30:9092
-    - 192.168.200.31:9092
-# -------------------- kafka --------------------  
+# -------------------- mysql --------------------  
 mysql: 
   host: 192.168.200.18:3306
   db: message
@@ -62,9 +44,6 @@ redis:
   password:
 
 
-email:
-  emails:
-    - { emailfrom: "your email host",username: "user name",aliasname: "alias name",password: "password",host: "host",port: 0 }
 #token验证
 auth:
   checktoken: http://jwt/api/v1/jwt/check

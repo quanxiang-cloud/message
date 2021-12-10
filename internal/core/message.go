@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"log"
 
 	daprd "github.com/dapr/go-sdk/client"
 	"github.com/quanxiang-cloud/message/pkg/component/dapr"
@@ -12,13 +13,13 @@ import (
 type Channel int
 
 const (
-	Letter Channel = iota
+	None Channel = iota
+	Letter
 	Email
 )
 
 type Message struct {
-	Channel Channel   `json:"channel,omitempty"`
-	Data    dapr.Data `json:"data,omitempty"`
+	dapr.Data `json:",omitempty"`
 }
 
 type SendResp struct{}
@@ -62,12 +63,14 @@ func WithTenant(tenant string) Option {
 }
 
 func (b *Bus) Send(ctx context.Context, req *Message) (*SendResp, error) {
-	topic := fmt.Sprintf("%s.%s", b.tenant, req.Channel)
-	fmt.Println("topic:", topic)
-	fmt.Println("pubsubName:", b.pubsubName)
-	if err := b.daprClient.PublishEvent(context.Background(), b.pubsubName, topic, req.Data); err != nil {
-		return &SendResp{}, err
+	if req.Data.LetterSpec != nil {
+		topic := fmt.Sprintf("%s.%s", b.tenant, Letter.String())
+		log.Printf("send letter,topic: [%s]", topic)
+		if err := b.daprClient.PublishEvent(context.Background(), b.pubsubName, topic, req.Data); err != nil {
+			return &SendResp{}, err
+		}
 	}
+
 	return &SendResp{}, nil
 }
 

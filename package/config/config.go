@@ -4,9 +4,10 @@ import (
 	"io/ioutil"
 	"time"
 
-	"git.internal.yunify.com/qxp/misc/client"
 	"git.internal.yunify.com/qxp/misc/logger"
 	"git.internal.yunify.com/qxp/misc/mysql2"
+	"git.internal.yunify.com/qxp/misc/redis2"
+	"github.com/quanxiang-cloud/message/pkg/client"
 
 	"gopkg.in/yaml.v2"
 )
@@ -19,17 +20,14 @@ var DefaultPath = "./configs/config.yml"
 
 // Config 配置文件
 type Config struct {
-	Port         string        `yaml:"port"`
-	Model        string        `yaml:"model"`
-	MessageAPI   string        `yaml:"messageAPI"`
-	InternalNet  client.Config `yaml:"internalNet"`
-	ProcessorNum int           `yaml:"processorNum"`
-	SyncChannel  string        `yaml:"syncChannel"`
-	HandOut      HandOut       `yaml:"handout"`
-	Log          logger.Config `yaml:"log"`
-	Mysql        mysql2.Config `yaml:"mysql"`
-	Email        Email         `yaml:"email"`
-	AUth         Auth          `yaml:"auth"`
+	Port        string        `yaml:"port"`
+	Model       string        `yaml:"model"`
+	MessageAPI  string        `yaml:"messageAPI"`
+	InternalNet client.Config `yaml:"internalNet"`
+	Log         logger.Config `yaml:"log"`
+	Mysql       mysql2.Config `yaml:"mysql"`
+	Redis       redis2.Config `yaml:"redis"`
+	AUth        Auth          `yaml:"auth"`
 }
 
 // Email email

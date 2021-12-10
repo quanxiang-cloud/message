@@ -2,24 +2,29 @@ package websocket
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 type Manager struct {
 	sync.RWMutex
-
-	pool map[string][]*Connect
+	pool   map[string][]*Connect
+	affair Affair
 }
 
-func NewManager(ctx context.Context) (*Manager, error) {
+func NewManager(ctx context.Context, affair Affair) (*Manager, error) {
 	return &Manager{
-		pool: make(map[string][]*Connect),
+		pool:   make(map[string][]*Connect),
+		affair: affair,
 	}, nil
 }
 
-func (m *Manager) Register(ctx context.Context, id string, ws *websocket.Conn) *Connect {
+func (m *Manager) Register(ctx context.Context, id string, ws *websocket.Conn) (*Connect, error) {
+	ctx, cacel := context.WithCancel(context.Background())
 	conns := m.getConns(id)
 	if len(conns) == 0 {
 		conns = make([]*Connect, 0, 1)
@@ -30,17 +35,51 @@ func (m *Manager) Register(ctx context.Context, id string, ws *websocket.Conn) *
 	m.upsetConns(id, conns)
 
 	ws.SetCloseHandler(func(code int, text string) error {
+		cacel()
 		m.UnRegister(ctx, conn)
+		fmt.Println("UnRegister....")
 		return nil
 	})
 
 	ws.SetPingHandler(func(appData string) error {
-		return nil
+		err := m.affair.Renewal(ctx, CopyFromConnect(conn))
+		if err != nil {
+			return err
+		}
+		err = ws.WriteControl(websocket.PongMessage, []byte(appData), time.Now().Add(time.Second))
+		if err == websocket.ErrCloseSent {
+			return nil
+		} else if e, ok := err.(net.Error); ok && e.Temporary() {
+			return nil
+		}
+		return err
 	})
-	return conn
+
+	err := m.affair.Create(ctx, CopyFromConnect(conn))
+
+	m.read(ctx, *conn)
+	return conn, err
 }
 
-func (m *Manager) UnRegister(ctx context.Context, conn *Connect) {
+func (m *Manager) read(ctx context.Context, conn Connect) {
+	go func(ctx context.Context, conn Connect) {
+		rc := conn.Read()
+		for {
+			select {
+			case _, ok := <-rc:
+				if !ok {
+					return
+				}
+			case <-ctx.Done():
+				conn.socket.Close()
+				return
+			}
+
+		}
+	}(ctx, conn)
+}
+
+func (m *Manager) UnRegister(ctx context.Context, conn *Connect) error {
 	id := conn.id
 
 	conns := m.getConns(id)
@@ -51,9 +90,12 @@ func (m *Manager) UnRegister(ctx context.Context, conn *Connect) {
 		}
 	}
 	m.upsetConns(id, conns)
+
+	return m.affair.Delete(ctx, CopyFromConnect(conn))
 }
 
-func (m *Manager) Renewal(ctx context.Context, conn *Connect) {
+func (m *Manager) Renewal(ctx context.Context, conn *Connect) error {
+	return m.affair.Renewal(ctx, CopyFromConnect(conn))
 }
 
 type SendReq struct {

@@ -15,8 +15,8 @@ type DaprEvent struct {
 }
 
 type Data struct {
-	*LetterSpec `json:",omitempty"`
-	*EmailSpec  `json:",omitempty"`
+	*LetterSpec `json:"letter,omitempty"`
+	*EmailSpec  `json:"email,omitempty"`
 }
 
 type LetterSpec struct {

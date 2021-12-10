@@ -41,13 +41,12 @@ func (w *Websocket) Handler(c *gin.Context) {
 	}
 	ctx := context.Background()
 
-	client := w.manager.Register(ctx, "1", wsConn)
-	// err = client.SendOut(&comet.Message{
-	// 	Content: comet.Content{
-	// 		Type:    comet.ConnetSucess,
-	// 		Message: map[string]string{"uuid": client.UUID},
-	// 	},
-	// })
+	client, err := w.manager.Register(ctx, "1", wsConn)
+	if err != nil {
+		w.manager.UnRegister(ctx, client)
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
 
 	pong, err := json.Marshal(struct {
 		UUID string `json:"uuid"`

@@ -1,0 +1,59 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: message-manager-dapr
+spec:
+  ports:
+    - name: web
+      protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app: message-dapr
+  type: ClusterIP
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: message-dapr
+  labels:
+    app: message-dapr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: message-dapr
+  template:
+    metadata:
+      labels:
+        app: message-dapr
+      annotations:
+        dapr.io/app-id: message-manager
+        dapr.io/app-port: '80'
+        dapr.io/enabled: 'true'
+    spec:
+      volumes:
+        - name: configmap
+          configMap:
+            name: message-dapr
+            defaultMode: 420
+      containers:
+        - name: message
+          image: dockerhub.qingcloud.com/lowcode/message:alpha1
+          args:
+            - '--tenant=lowcode'
+            - '--config=/configs/config.yml'
+            - '--pubsub-name=message-kafka-pubsub'
+          ports:
+            - name: web
+              containerPort: 80
+              protocol: TCP
+          resources: {}
+          volumeMounts:
+            - name: configmap
+              readOnly: true
+              mountPath: /configs
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: docker

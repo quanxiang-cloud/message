@@ -8,13 +8,14 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[Letter-0]
-	_ = x[Email-1]
+	_ = x[None-0]
+	_ = x[Letter-1]
+	_ = x[Email-2]
 }
 
-const _Channel_name = "LetterEmail"
+const _Channel_name = "NoneLetterEmail"
 
-var _Channel_index = [...]uint8{0, 6, 11}
+var _Channel_index = [...]uint8{0, 4, 10, 15}
 
 func (i Channel) String() string {
 	if i < 0 || i >= Channel(len(_Channel_index)-1) {

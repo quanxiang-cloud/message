@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -57,7 +58,8 @@ func (c *Component) init(ctx context.Context, sender Sender) {
 }
 
 func errHandle(c *gin.Context, err error) {
-	c.AbortWithError(http.StatusBadRequest, err)
+	log.Println(err.Error())
+	c.JSON(http.StatusOK, nil)
 }
 
 type Option func(*Component)
