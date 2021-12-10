@@ -7,19 +7,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/message/pkg/component"
-	"github.com/quanxiang-cloud/message/pkg/component/letter"
+	"github.com/quanxiang-cloud/message/pkg/component/email"
 )
 
 func main() {
-	var host string
 	var port string
 
-	flag.StringVar(&host, "message-server", "", "message server host")
 	flag.StringVar(&port, "port", ":80", "")
+	email.Prepare()
 	flag.Parse()
 
 	ctx := context.Background()
-	sender, err := letter.New(ctx, host)
+	sender, err := email.New(ctx)
 	if err != nil {
 		log.Fatal(err.Error())
 		return
