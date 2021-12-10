@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/quanxiang-cloud/message/pkg/client"
-	"github.com/quanxiang-cloud/message/pkg/component/dapr"
+	"github.com/quanxiang-cloud/message/pkg/component/event"
 )
 
 type Letter struct {
@@ -28,15 +28,15 @@ func New(ctx context.Context, host string) (*Letter, error) {
 	}, nil
 }
 
-func (l *Letter) Scaffold(ctx context.Context, data dapr.Data) error {
+func (l *Letter) Scaffold(ctx context.Context, data event.Data) error {
 	if data.LetterSpec == nil {
-		return dapr.ErrDataIsNil
+		return event.ErrDataIsNil
 	}
 
 	return l.Send(ctx, data.LetterSpec)
 }
 
-func (l *Letter) Send(ctx context.Context, data *dapr.LetterSpec) error {
+func (l *Letter) Send(ctx context.Context, data *event.LetterSpec) error {
 	req := map[string]interface{}{
 		"userID":  data.ID,
 		"uuid":    data.UUID,

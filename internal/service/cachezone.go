@@ -12,9 +12,9 @@ import (
 	"git.internal.yunify.com/qxp/misc/redis2"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"github.com/quanxiang-cloud/message/internal/models/redis"
-	"github.com/quanxiang-cloud/message/package/config"
 	"github.com/quanxiang-cloud/message/pkg/client"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
+	"github.com/quanxiang-cloud/message/pkg/config"
 )
 
 type CacheZone struct {

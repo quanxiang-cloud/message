@@ -8,8 +8,8 @@ import (
 	"github.com/quanxiang-cloud/message/api/restful"
 	"github.com/quanxiang-cloud/message/internal/core"
 	"github.com/quanxiang-cloud/message/internal/service"
-	"github.com/quanxiang-cloud/message/package/config"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
+	"github.com/quanxiang-cloud/message/pkg/config"
 )
 
 func main() {

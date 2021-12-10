@@ -6,7 +6,7 @@ import (
 	"log"
 
 	daprd "github.com/dapr/go-sdk/client"
-	"github.com/quanxiang-cloud/message/pkg/component/dapr"
+	"github.com/quanxiang-cloud/message/pkg/component/event"
 )
 
 //go:generate stringer -type Channel
@@ -19,7 +19,7 @@ const (
 )
 
 type Message struct {
-	dapr.Data `json:",omitempty"`
+	event.Data `json:",omitempty"`
 }
 
 type SendResp struct{}

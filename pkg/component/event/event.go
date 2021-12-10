@@ -1,4 +1,4 @@
-package dapr
+package event
 
 import "errors"
 

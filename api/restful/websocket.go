@@ -8,8 +8,8 @@ import (
 	ct "git.internal.yunify.com/qxp/misc/client"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/quanxiang-cloud/message/package/config"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
+	"github.com/quanxiang-cloud/message/pkg/config"
 	client "github.com/quanxiang-cloud/message/pkg/quanxiang"
 )
 
