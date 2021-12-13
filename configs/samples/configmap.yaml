@@ -16,22 +16,6 @@ data:
     # debug模式，可以输出更加详细的日志，但是运行速度会减慢
     model: debug
 
-    # 站内信发送地址
-    messageAPI: http://%s:80
-
-    #  -------------------- log --------------------
-    # comply with zap log specification
-    log:
-      level: -1
-      development: false
-      sampling:
-        initial: 100
-        thereafter: 100
-      outputPath:
-        - stderr
-      errorOutputPath:
-        - stderr
-
     #  -------------------- internalNet --------------------
     internalNet:
       timeout: 20
@@ -50,7 +34,3 @@ data:
       - redis:6379
       username:
       password:
-
-    #token验证
-    auth:
-      checktoken: http://jwt/api/v1/jwt/check

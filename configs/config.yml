@@ -6,9 +6,6 @@ port: :80
 # debug模式，可以输出更加详细的日志，但是运行速度会减慢
 model: debug
 
-# 站内信发送地址
-messageAPI: http://%s:80
-
 #  -------------------- internalNet --------------------
 internalNet:
   timeout: 20
@@ -27,8 +24,3 @@ redis:
     - redis:6379
   username:
   password:
-
-
-#token验证
-auth:
-  checktoken: http://jwt/api/v1/jwt/check

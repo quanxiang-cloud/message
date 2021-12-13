@@ -2,7 +2,6 @@ package config
 
 import (
 	"io/ioutil"
-	"time"
 
 	"git.internal.yunify.com/qxp/misc/mysql2"
 	"git.internal.yunify.com/qxp/misc/redis2"
@@ -21,26 +20,9 @@ var DefaultPath = "./configs/config.yml"
 type Config struct {
 	Port        string        `yaml:"port"`
 	Model       string        `yaml:"model"`
-	MessageAPI  string        `yaml:"messageAPI"`
 	InternalNet client.Config `yaml:"internalNet"`
 	Mysql       mysql2.Config `yaml:"mysql"`
 	Redis       redis2.Config `yaml:"redis"`
-	AUth        Auth          `yaml:"auth"`
-}
-
-// Email email
-type Email struct {
-	EmailList []EmailConfig `yaml:"emails"`
-}
-
-// EmailConfig list
-type EmailConfig struct {
-	Emailfrom string `yaml:"emailfrom"`
-	Username  string `yaml:"username"`
-	Password  string `yaml:"password"`
-	Host      string `yaml:"host"`
-	Port      int    `yaml:"port"`
-	Aliasname string `yaml:"aliasname"`
 }
 
 // NewConfig 获取配置配置
@@ -59,16 +41,4 @@ func NewConfig(path string) (*Config, error) {
 	}
 
 	return Conf, nil
-}
-
-// HandOut hand out
-type HandOut struct {
-	Deadline     time.Duration
-	DialTimeout  time.Duration
-	MaxIdleConns int
-}
-
-//Auth token check
-type Auth struct {
-	CheckToken string `yaml:"checktoken"`
 }
