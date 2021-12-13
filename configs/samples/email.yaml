@@ -34,7 +34,7 @@ spec:
         dapr.io/enabled: 'true'
     spec:
       containers:
-        - name: container-gxic5a
+        - name: email
           image: <<IMAGE>>
           args:
             - '--port=:80'
