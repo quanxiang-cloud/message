@@ -32,7 +32,7 @@ mysql:
   host: mysql:3306
   db: message
   user: root
-  password: 
+  password:
   log: true
 
 redis:

@@ -8,7 +8,7 @@ spec:
   metadata:
       # Kafka broker connection setting
     - name: brokers
-      value: "YOUR BROKERS"
+      value: "<<YOUR BROKERS>>"
     - name: authRequired
       value: "false"
     - name: maxMessageBytes

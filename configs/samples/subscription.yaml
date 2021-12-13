@@ -8,3 +8,14 @@ spec:
   pubsubname: message-kafka-pubsub
 scopes:
 - message-letter
+---
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: message-email
+spec:
+  topic: lowcode.Email
+  route:  /send
+  pubsubname: message-kafka-pubsub
+scopes:
+- message-email

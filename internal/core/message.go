@@ -63,15 +63,33 @@ func WithTenant(tenant string) Option {
 }
 
 func (b *Bus) Send(ctx context.Context, req *Message) (*SendResp, error) {
+	var topic string
+
 	if req.Data.LetterSpec != nil {
-		topic := fmt.Sprintf("%s.%s", b.tenant, Letter.String())
-		log.Printf("send letter,topic: [%s]", topic)
-		if err := b.daprClient.PublishEvent(context.Background(), b.pubsubName, topic, req.Data); err != nil {
-			return &SendResp{}, err
+		topic = fmt.Sprintf("%s.%s", b.tenant, Letter.String())
+		if err := b.publish(ctx, topic, req.Data); err != nil {
+			return &SendResp{}, nil
 		}
 	}
 
+	if req.Data.EmailSpec != nil {
+		topic = fmt.Sprintf("%s.%s", b.tenant, Email.String())
+		if err := b.publish(ctx, topic, req.Data); err != nil {
+			return &SendResp{}, nil
+		}
+	}
+
+	log.Printf("publish success.")
 	return &SendResp{}, nil
+}
+
+func (b *Bus) publish(ctx context.Context, topic string, data interface{}) error {
+	log.Printf("send letter,topic: [%s]\n", topic)
+	if err := b.daprClient.PublishEvent(context.Background(), b.pubsubName, topic, data); err != nil {
+		log.Printf("send fail: [%s]", err.Error())
+		return err
+	}
+	return nil
 }
 
 func (b *Bus) Close() error {

@@ -2,7 +2,7 @@ CONF ?=$(shell pwd)/configs
 MESSAGE_SERVER ?=http://127.0.0.1:80
 MESSAGE_PORT ?=80
 LETTER_PORT ?=8080
-EMAIL_PORT ?=8080
+EMAIL_PORT ?=8081
 PUBSUB_NAME ?=message-kafka-pubsub
 
 REPO ?=dockerhub.qingcloud.com/lowcode
@@ -16,11 +16,11 @@ generate:
 
 .PHONY: run-letter
 run-letter: generate
-	dapr run -d ${CONF}/deploy --app-id message-letter -p ${LETTER_PORT} -- go run cmd/letter/main.go --port :${LETTER_PORT} --message-server ${MESSAGE_SERVER}
+	dapr run -d ${CONF}/samples --app-id message-letter -p ${LETTER_PORT} -- go run cmd/letter/main.go --port :${LETTER_PORT} --message-server ${MESSAGE_SERVER}
 
 .PHONY: run-email
 run-email: generate
-	dapr run -d ${CONF}/deploy --app-id message-letter -p ${EMAIL_PORT} -- go run cmd/email/main.go --port :${EMAIL_PORT} \
+	dapr run -d ${CONF}/samples --app-id message-email -p ${EMAIL_PORT} -- go run cmd/email/main.go --port :${EMAIL_PORT} \
 		--email-host ${HOST} \
 		--email-port ${PORT}\
 		--email-username ${USERNAME}\
@@ -30,7 +30,7 @@ run-email: generate
 
 .PHONY: run-manager
 run-manager: generate
-	dapr run -d ${CONF}/deploy --app-id message-manager -p ${MESSAGE_PORT} -- go run cmd/message/main.go --config ${CONF}/config.yml --pubsub-name ${PUBSUB_NAME}
+	dapr run -d ${CONF}/samples --app-id message-manager -p ${MESSAGE_PORT} -- go run cmd/message/main.go --config ${CONF}/config.yml --pubsub-name ${PUBSUB_NAME}
 
 .PHONY: docker-build-letter
 docker-build-letter: generate
