@@ -32,7 +32,7 @@ func main() {
 	log = zapr.NewLogger(zapLog)
 
 	ctx := context.Background()
-	sender, err := letter.New(ctx, host)
+	sender, err := letter.New(ctx, host, log)
 	if err != nil {
 		log.Error(err, "new sender")
 		panic(err)
