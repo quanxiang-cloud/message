@@ -39,7 +39,7 @@ spec:
             defaultMode: 420
       containers:
         - name: message
-          image: dockerhub.qingcloud.com/lowcode/message:alpha1
+          image: '<<IMAGE>>'
           args:
             - '--tenant=lowcode'
             - '--config=/configs/config.yml'

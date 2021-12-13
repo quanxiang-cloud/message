@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: container-gxic5a
-          image: 'dockerhub.qingcloud.com/lowcode/letter:alpha1'
+          image: '<<IMAGE>>'
           args:
             - '--port=:80'
             - '--message-server=http://message-manager-dapr'
