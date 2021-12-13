@@ -1,9 +1,8 @@
-package quanxiang
+package lowcode
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"git.internal.yunify.com/qxp/misc/client"
@@ -26,14 +25,13 @@ type warden struct {
 }
 
 // NewWarden
-func NewOWarden(conf client.Config) Warden {
+func NewWarden(conf client.Config) Warden {
 	return &warden{
 		client: client.New(conf),
 	}
 }
 
 func (o *warden) CheckToken(ctx context.Context, token, checkURI string) (*Profile, error) {
-	fmt.Println(token)
 	req, err := http.NewRequest("POST", checkURI, nil)
 	if err != nil {
 		logger.Logger.Errorw(err.Error(), logger.STDRequestID(ctx))
