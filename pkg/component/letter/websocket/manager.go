@@ -2,11 +2,11 @@ package websocket
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/gorilla/websocket"
 )
 
@@ -14,12 +14,14 @@ type Manager struct {
 	sync.RWMutex
 	pool   map[string][]*Connect
 	affair Affair
+	log    logr.Logger
 }
 
-func NewManager(ctx context.Context, affair Affair) (*Manager, error) {
+func NewManager(ctx context.Context, affair Affair, log logr.Logger) (*Manager, error) {
 	return &Manager{
 		pool:   make(map[string][]*Connect),
 		affair: affair,
+		log:    log.WithName("manager"),
 	}, nil
 }
 
@@ -37,7 +39,7 @@ func (m *Manager) Register(ctx context.Context, id string, ws *websocket.Conn) (
 	ws.SetCloseHandler(func(code int, text string) error {
 		cacel()
 		m.UnRegister(ctx, conn)
-		fmt.Println("UnRegister....")
+		m.log.Info("UnRegister", "id", id, "uuid", conn.GetUUID())
 		return nil
 	})
 
@@ -58,6 +60,8 @@ func (m *Manager) Register(ctx context.Context, id string, ws *websocket.Conn) (
 	err := m.affair.Create(ctx, CopyFromConnect(conn))
 
 	m.read(ctx, *conn)
+
+	m.log.Info("Register", "id", id, "uuid", conn.GetUUID())
 	return conn, err
 }
 
@@ -111,8 +115,10 @@ func (m *Manager) Send(ctx context.Context, req *SendReq) (*SendResp, error) {
 	conns := m.getConns(req.ID, req.UUID...)
 	for _, conn := range conns {
 		err := conn.Write(websocket.TextMessage, req.Content)
-		// FIXME
-		_ = err
+		if err != nil {
+			m.log.Error(err, "writh message", "id", conn.id, "uuid", conn.uuid)
+			_ = conn.socket.Close()
+		}
 	}
 	return &SendResp{}, nil
 }

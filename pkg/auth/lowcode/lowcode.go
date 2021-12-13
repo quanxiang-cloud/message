@@ -4,19 +4,23 @@ import (
 	"context"
 	"net/http"
 
-	"git.internal.yunify.com/qxp/misc/client"
+	"github.com/go-logr/logr"
+	"github.com/quanxiang-cloud/message/pkg/client"
 )
 
 type Lowcode struct {
 	warden Warden
+	log    logr.Logger
 }
 
-func NewLowcodeAuth() *Lowcode {
+func NewLowcodeAuth(log logr.Logger) *Lowcode {
+
 	return &Lowcode{
 		warden: NewWarden(client.Config{
 			Timeout:      20,
 			MaxIdleConns: 10,
 		}),
+		log: log.WithName("lowcode"),
 	}
 }
 
@@ -30,7 +34,8 @@ func (l *Lowcode) Auth(w http.ResponseWriter, r *http.Request) bool {
 	}
 
 	if token == "" {
-		w.WriteHeader(http.StatusForbidden)
+		w.WriteHeader(http.StatusUnauthorized)
+		l.log.Info("can not get token")
 		return false
 	}
 
@@ -39,6 +44,7 @@ func (l *Lowcode) Auth(w http.ResponseWriter, r *http.Request) bool {
 	profile, err := l.warden.CheckToken(ctx, token, authURL)
 	if err != nil {
 		w.WriteHeader(http.StatusForbidden)
+		l.log.Error(err, "checkToken")
 		return false
 	}
 

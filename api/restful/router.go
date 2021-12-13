@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"git.internal.yunify.com/qxp/misc/logger"
 	"git.internal.yunify.com/qxp/misc/resp"
 	"github.com/gin-gonic/gin"
 	"github.com/quanxiang-cloud/message/internal/core"
@@ -33,7 +32,7 @@ func NewRouter(ctx context.Context, c *config.Config, rf []RouterOption) (*Route
 	}
 	gin.SetMode(c.Model)
 	engine := gin.New()
-	engine.Use(logger.GinLogger(), logger.GinRecovery())
+	engine.Use(gin.Logger(), gin.Recovery())
 
 	v1 := engine.Group("/api/v1/message")
 	for _, fn := range rf {

@@ -5,10 +5,10 @@ package letter
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/pkg/client"
 	"github.com/quanxiang-cloud/message/pkg/component/event"
 )
@@ -16,15 +16,18 @@ import (
 type Letter struct {
 	host   string
 	client http.Client
+
+	log logr.Logger
 }
 
-func New(ctx context.Context, host string) (*Letter, error) {
+func New(ctx context.Context, host string, log logr.Logger) (*Letter, error) {
 	return &Letter{
 		host: host,
 		client: client.New(client.Config{
 			Timeout:      time.Second * 20,
 			MaxIdleConns: 10,
 		}),
+		log: log.WithName("letter"),
 	}, nil
 }
 
@@ -45,7 +48,7 @@ func (l *Letter) Send(ctx context.Context, data *event.LetterSpec) error {
 
 	err := client.POST(ctx, &l.client, fmt.Sprintf("%s/api/v1/message/publish", l.host), req, nil)
 	if err != nil {
-		log.Printf("publish fail: %s \n", err.Error())
+		l.log.Error(err, "publish", "userID", data.ID, "uuid", data.UUID)
 		return err
 	}
 	return nil

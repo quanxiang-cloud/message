@@ -6,6 +6,7 @@ import (
 	"log"
 
 	daprd "github.com/dapr/go-sdk/client"
+	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/pkg/component/event"
 )
 
@@ -26,18 +27,20 @@ type SendResp struct{}
 
 type Bus struct {
 	daprClient daprd.Client
+	log        logr.Logger
 
 	pubsubName string
 	tenant     string
 }
 
-func New(ctx context.Context, opts ...Option) (*Bus, error) {
+func New(ctx context.Context, log logr.Logger, opts ...Option) (*Bus, error) {
 	client, err := daprd.NewClient()
 	if err != nil {
 		return nil, err
 	}
 	bus := &Bus{
 		daprClient: client,
+		log:        log.WithName("bus"),
 	}
 
 	for _, fn := range opts {
@@ -79,14 +82,14 @@ func (b *Bus) Send(ctx context.Context, req *Message) (*SendResp, error) {
 		}
 	}
 
-	log.Printf("publish success.")
+	b.log.Info("publish success")
 	return &SendResp{}, nil
 }
 
 func (b *Bus) publish(ctx context.Context, topic string, data interface{}) error {
 	log.Printf("send letter,topic: [%s]\n", topic)
 	if err := b.daprClient.PublishEvent(context.Background(), b.pubsubName, topic, data); err != nil {
-		log.Printf("send fail: [%s]", err.Error())
+		b.log.Error(err, "publishEvent", "topic", topic, "pubsubName", b.pubsubName)
 		return err
 	}
 	return nil

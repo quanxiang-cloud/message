@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -9,8 +10,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
+	"github.com/go-logr/zapr"
 	authi "github.com/quanxiang-cloud/message/pkg/auth"
 	"github.com/quanxiang-cloud/message/pkg/auth/lowcode"
+	"go.uber.org/zap"
+)
+
+var (
+	log logr.Logger
 )
 
 func main() {
@@ -33,6 +41,12 @@ func main() {
 	flag.DurationVar(&expectContinueTimeout, "expect-continue-timeout", 1*time.Second, "")
 	flag.Parse()
 
+	zapLog, err := zap.NewDevelopment()
+	if err != nil {
+		panic(fmt.Sprintf("who watches the watchmen (%v)?", err))
+	}
+	log = zapr.NewLogger(zapLog)
+
 	uri, err := url.ParseRequestURI(entrypoint)
 	if err != nil {
 		panic(err)
@@ -54,9 +68,10 @@ func main() {
 	e := gin.New()
 	e.Use(gin.Logger(), gin.Recovery())
 
-	group := e.Group("/", auth(lowcode.NewLowcodeAuth()))
+	group := e.Group("/", auth(lowcode.NewLowcodeAuth(log)))
 	group.Any("*path", proxy(uri, transport))
 
+	log.Info("start...")
 	e.Run(port)
 }
 

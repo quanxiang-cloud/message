@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 
+	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/pkg/component/event"
 	"gopkg.in/gomail.v2"
 )
@@ -32,13 +33,15 @@ func Prepare() {
 	flag.StringVar(&sender, "email-sender", "", "ender email")
 }
 
-func New(ctx context.Context) (*Email, error) {
+func New(ctx context.Context, log logr.Logger) (*Email, error) {
 	return &Email{
 		dialer: gomail.NewDialer(host, port, username, password),
+		log:    log.WithName("email"),
 	}, nil
 }
 
 type Email struct {
+	log    logr.Logger
 	dialer *gomail.Dialer
 }
 
@@ -61,6 +64,7 @@ func (e *Email) Send(ctx context.Context, data *event.EmailSpec) error {
 	m.SetBody(data.ContentType, data.Content)
 
 	if err := e.dialer.DialAndSend(m); err != nil {
+		e.log.Error(err, "DialAndSend")
 		return err
 	}
 	return nil

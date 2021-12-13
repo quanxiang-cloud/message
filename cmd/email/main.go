@@ -3,11 +3,18 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
+	"github.com/go-logr/zapr"
 	"github.com/quanxiang-cloud/message/pkg/component"
 	"github.com/quanxiang-cloud/message/pkg/component/email"
+	"go.uber.org/zap"
+)
+
+var (
+	log logr.Logger
 )
 
 func main() {
@@ -17,11 +24,17 @@ func main() {
 	email.Prepare()
 	flag.Parse()
 
-	ctx := context.Background()
-	sender, err := email.New(ctx)
+	zapLog, err := zap.NewDevelopment()
 	if err != nil {
-		log.Fatal(err.Error())
-		return
+		panic(fmt.Sprintf("who watches the watchmen (%v)?", err))
+	}
+	log = zapr.NewLogger(zapLog)
+
+	ctx := context.Background()
+	sender, err := email.New(ctx, log)
+	if err != nil {
+		log.Error(err, "new sender")
+		panic(err)
 	}
 
 	e := gin.New()
@@ -33,7 +46,7 @@ func main() {
 		component.WithRouter(e.Group("")),
 	)
 
-	log.Println("start...")
+	log.Info("start...")
 	err = e.Run(port)
 	if err != nil {
 		panic(err)

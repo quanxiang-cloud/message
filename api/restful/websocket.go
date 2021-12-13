@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
 	"github.com/gorilla/websocket"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
 	"github.com/quanxiang-cloud/message/pkg/config"
@@ -13,11 +14,13 @@ import (
 
 type Websocket struct {
 	manager *wm.Manager
+	log     logr.Logger
 }
 
-func NewWebsocket(ctx context.Context, conf *config.Config, manager *wm.Manager) (*Websocket, error) {
+func NewWebsocket(ctx context.Context, conf *config.Config, manager *wm.Manager, log logr.Logger) (*Websocket, error) {
 	return &Websocket{
 		manager: manager,
+		log:     log.WithName("websocket"),
 	}, nil
 }
 
@@ -36,6 +39,7 @@ func (w *Websocket) Handler(c *gin.Context) {
 	if err != nil {
 		w.manager.UnRegister(ctx, client)
 		c.AbortWithError(http.StatusInternalServerError, err)
+		w.log.Error(err, "register")
 		return
 	}
 
@@ -47,6 +51,7 @@ func (w *Websocket) Handler(c *gin.Context) {
 	if err != nil {
 		w.manager.UnRegister(ctx, client)
 		c.AbortWithError(http.StatusInternalServerError, err)
+		w.log.Error(err, "json marshal")
 		return
 	}
 
@@ -57,6 +62,7 @@ func (w *Websocket) Handler(c *gin.Context) {
 	if err != nil {
 		w.manager.UnRegister(ctx, client)
 		c.AbortWithError(http.StatusInternalServerError, err)
+		w.log.Error(err, "send first message")
 		return
 	}
 }

@@ -9,19 +9,6 @@ model: debug
 # 站内信发送地址
 messageAPI: http://%s:80
 
-#  -------------------- log --------------------
-# comply with zap log specification
-log:
-  level: -1
-  development: false
-  sampling:
-    initial: 100
-    thereafter: 100
-  outputPath:
-    - stderr
-  errorOutputPath:
-    - stderr
-
 #  -------------------- internalNet --------------------
 internalNet:
   timeout: 20
