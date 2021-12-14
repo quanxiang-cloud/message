@@ -116,7 +116,7 @@ func (m *Manager) Send(ctx context.Context, req *SendReq) (*SendResp, error) {
 	for _, conn := range conns {
 		err := conn.Write(websocket.TextMessage, req.Content)
 		if err != nil {
-			m.log.Error(err, "writh message", "id", conn.id, "uuid", conn.uuid)
+			m.log.Error(err, "write message", "id", conn.id, "uuid", conn.uuid)
 			_ = conn.socket.Close()
 		}
 	}
