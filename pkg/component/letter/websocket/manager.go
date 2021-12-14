@@ -88,7 +88,7 @@ func (m *Manager) UnRegister(ctx context.Context, conn *Connect) error {
 
 	conns := m.getConns(id)
 	for i, elem := range conns {
-		if elem.uuid == conn.id {
+		if elem.uuid == conn.uuid {
 			conns = append(conns[:i], conns[i+1:]...)
 			break
 		}
@@ -115,7 +115,7 @@ func (m *Manager) Send(ctx context.Context, req *SendReq) (*SendResp, error) {
 	conns := m.getConns(req.ID, req.UUID...)
 	for _, conn := range conns {
 		err := conn.Write(websocket.TextMessage, req.Content)
-		if err != nil {
+		if err != nil && err != websocket.ErrCloseSent {
 			m.log.Error(err, "write message", "id", conn.id, "uuid", conn.uuid)
 			_ = conn.socket.Close()
 		}

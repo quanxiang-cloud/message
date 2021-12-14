@@ -57,6 +57,7 @@ func (w *Websocket) Handler(c *gin.Context) {
 
 	_, err = w.manager.Send(ctx, &wm.SendReq{
 		ID:      id,
+		UUID:    []string{client.GetUUID()},
 		Content: pong,
 	})
 	if err != nil {
