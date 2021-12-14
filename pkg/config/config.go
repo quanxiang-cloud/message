@@ -20,6 +20,7 @@ var DefaultPath = "./configs/config.yml"
 type Config struct {
 	Port        string        `yaml:"port"`
 	Model       string        `yaml:"model"`
+	Loopback    bool          `yaml:"loopback"`
 	InternalNet client.Config `yaml:"internalNet"`
 	Mysql       mysql2.Config `yaml:"mysql"`
 	Redis       redis2.Config `yaml:"redis"`

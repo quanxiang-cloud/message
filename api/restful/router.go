@@ -105,10 +105,7 @@ func WithBus(bus *core.Bus) RouterOption {
 			}
 			resp, err := bus.Send(c.Request.Context(), message)
 			if err != nil {
-				if err != nil {
-					c.JSON(http.StatusBadRequest, err)
-					return
-				}
+				c.JSON(http.StatusBadRequest, err)
 				return
 			}
 

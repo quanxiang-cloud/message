@@ -71,14 +71,16 @@ func (b *Bus) Send(ctx context.Context, req *Message) (*SendResp, error) {
 	if req.Data.LetterSpec != nil {
 		topic = fmt.Sprintf("%s.%s", b.tenant, Letter.String())
 		if err := b.publish(ctx, topic, req.Data); err != nil {
-			return &SendResp{}, nil
+			b.log.Error(err, "push letter", "userID", req.ID)
+			return &SendResp{}, err
 		}
 	}
 
 	if req.Data.EmailSpec != nil {
 		topic = fmt.Sprintf("%s.%s", b.tenant, Email.String())
 		if err := b.publish(ctx, topic, req.Data); err != nil {
-			return &SendResp{}, nil
+			b.log.Error(err, "push email", "title", req.EmailSpec.Title)
+			return &SendResp{}, err
 		}
 	}
 

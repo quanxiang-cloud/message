@@ -17,8 +17,11 @@ import (
 	"github.com/quanxiang-cloud/message/pkg/config"
 )
 
+var writerURL = "http://%s/api/v1/message/write"
+
 type CacheZone struct {
-	ip     string
+	ip string
+
 	cache  models.WSConnetRepo
 	log    logr.Logger
 	client http.Client
@@ -31,6 +34,10 @@ func NewCacheZone(ctx context.Context, conf *config.Config, log logr.Logger) (*C
 	if err != nil {
 		log.Error(err, "new redis client")
 		return nil, err
+	}
+
+	if conf.Loopback {
+		writerURL = fmt.Sprintf(writerURL, "%s"+conf.Port)
 	}
 
 	c := &CacheZone{
@@ -136,10 +143,11 @@ func (c *CacheZone) Publish(ctx context.Context, req *PublishReq) (*PublishResp,
 			Content: req.Content,
 		}
 
-		err = client.POST(ctx, &c.client, fmt.Sprintf("http://%s/api/v1/message/write", conn.IP), req, nil)
+		url := fmt.Sprintf(writerURL, conn.IP)
+		err = client.POST(ctx, &c.client, url, req, nil)
 		if err != nil {
 			// 打印报错信息
-			c.log.Error(err, "message send delete fail", req.ID, "uuid", conn.UUID)
+			c.log.Error(err, "message send fail", "userID", req.ID, "uuid", conn.UUID, "url", url)
 		}
 	}
 
