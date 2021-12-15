@@ -111,6 +111,22 @@ func WithBus(bus *core.Bus) RouterOption {
 
 			c.JSON(http.StatusOK, resp)
 		})
+
+		g.POST("/send/batch", func(c *gin.Context) {
+			type batch []*core.Message
+
+			batchData := make(batch, 0)
+			err := c.ShouldBindJSON(batchData)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, err)
+				return
+			}
+
+			for _, message := range batchData {
+				_, _ = bus.Send(c.Request.Context(), message)
+			}
+			c.JSON(http.StatusOK, nil)
+		})
 		return nil
 	}
 }
