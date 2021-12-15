@@ -7,28 +7,36 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  - main: ./cmd/auth/
+  - id: auth
+    main: ./cmd/auth/
+    binary: auth
     env:
       - CGO_ENABLED=0
     goos:
       - linux
       - windows
       - darwin
-  - main: ./cmd/message/
+  - id: message
+    main: ./cmd/message/
+    binary: message
     env:
       - CGO_ENABLED=0
     goos:
       - linux
       - windows
       - darwin
-  - main: ./cmd/letter/
+  - id: letter
+    main: ./cmd/letter/
+    binary: letter
     env:
       - CGO_ENABLED=0
     goos:
       - linux
       - windows
       - darwin
-  - main: ./cmd/email/
+  - id: email
+    main: ./cmd/email/
+    binary: email
     env:
       - CGO_ENABLED=0
     goos:

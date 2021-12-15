@@ -59,19 +59,25 @@ func (m *Manager) Register(ctx context.Context, id string, ws *websocket.Conn) (
 
 	err := m.affair.Create(ctx, CopyFromConnect(conn))
 
-	m.read(ctx, *conn)
+	m.read(ctx, conn)
 
 	m.log.Info("Register", "id", id, "uuid", conn.GetUUID())
 	return conn, err
 }
 
-func (m *Manager) read(ctx context.Context, conn Connect) {
-	go func(ctx context.Context, conn Connect) {
+func (m *Manager) read(ctx context.Context, conn *Connect) {
+	go func(ctx context.Context, conn *Connect) {
 		rc := conn.Read()
 		for {
 			select {
 			case _, ok := <-rc:
 				if !ok {
+					return
+				}
+				// just renewal
+				err := m.affair.Renewal(ctx, CopyFromConnect(conn))
+				if err != nil {
+					conn.socket.Close()
 					return
 				}
 			case <-ctx.Done():
