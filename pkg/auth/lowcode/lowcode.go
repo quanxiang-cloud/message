@@ -17,7 +17,7 @@ func init() {
 	if jwtHost == "" {
 		jwtHost = "http://jwt"
 	}
-	authURL = fmt.Sprintf("authURL", jwtHost)
+	authURL = fmt.Sprintf(authURL, jwtHost)
 }
 
 type Lowcode struct {
