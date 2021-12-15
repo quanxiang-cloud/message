@@ -2,11 +2,23 @@ package lowcode
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/pkg/client"
 )
+
+var authURL = "%s/api/v1/jwt/check"
+
+func init() {
+	jwtHost := os.Getenv("JWT_HOST")
+	if jwtHost == "" {
+		jwtHost = "http://jwt"
+	}
+	authURL = fmt.Sprintf("authURL", jwtHost)
+}
 
 type Lowcode struct {
 	warden Warden
@@ -23,8 +35,6 @@ func NewLowcodeAuth(log logr.Logger) *Lowcode {
 		log: log.WithName("lowcode"),
 	}
 }
-
-const authURL = "http://jwt/api/v1/jwt/check"
 
 func (l *Lowcode) Auth(w http.ResponseWriter, r *http.Request) bool {
 	token := r.URL.Query().Get("token")
