@@ -3,7 +3,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"log"
 
 	daprd "github.com/dapr/go-sdk/client"
 	"github.com/go-logr/logr"
@@ -89,7 +88,7 @@ func (b *Bus) Send(ctx context.Context, req *Message) (*SendResp, error) {
 }
 
 func (b *Bus) publish(ctx context.Context, topic string, data interface{}) error {
-	log.Printf("send letter,topic: [%s]\n", topic)
+	b.log.Info("send message", "topic", topic)
 	if err := b.daprClient.PublishEvent(context.Background(), b.pubsubName, topic, data); err != nil {
 		b.log.Error(err, "publishEvent", "topic", topic, "pubsubName", b.pubsubName)
 		return err
