@@ -57,6 +57,10 @@ func (l *Lowcode) Auth(w http.ResponseWriter, r *http.Request) bool {
 		l.log.Error(err, "checkToken")
 		return false
 	}
+	if profile.Code != 0 && profile.Code != 200 {
+		w.WriteHeader(profile.Code)
+		return false
+	}
 
 	r.Header.Add("Id", profile.UserID)
 	return true

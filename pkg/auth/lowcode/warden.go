@@ -2,7 +2,6 @@ package lowcode
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/quanxiang-cloud/message/pkg/client"
@@ -10,6 +9,7 @@ import (
 
 // Profile profile
 type Profile struct {
+	Code     int
 	UserID   string
 	UserName string
 }
@@ -46,7 +46,9 @@ func (o *warden) CheckToken(ctx context.Context, token, checkURI string) (*Profi
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return nil, errors.New(response.Status)
+		return &Profile{
+			Code: response.StatusCode,
+		}, nil
 	}
 
 	return &Profile{
