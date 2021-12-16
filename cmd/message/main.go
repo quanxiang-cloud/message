@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
@@ -20,6 +21,7 @@ var (
 )
 
 func main() {
+	time.Sleep(time.Second * 5)
 	var pubsubName string
 	var tenant string
 	var configPath string
@@ -73,7 +75,7 @@ func main() {
 		restful.WithBus(bus),
 		restful.WithWebSocket(ctx, ws),
 		restful.WithSender(cz, manager),
-	})
+	}, log)
 
 	if err != nil {
 		panic(err)

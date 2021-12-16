@@ -12,15 +12,17 @@ internalNet:
   maxIdleConns: 10
 
 # -------------------- mysql --------------------  
-mysql: 
-  host: mysql:3306
+mysql:
+  host: 192.168.200.18:3306
   db: message
   user: root
-  password:
+  password: uyWxtvt6gCOy3VPLB3rTpa0rQ
   log: true
 
 redis:
   addrs:
-    - redis:6379
+    - 192.168.200.18:6379
+    - 192.168.200.19:6379
+    - 192.168.200.20:6379
   username:
   password:

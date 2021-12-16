@@ -2,6 +2,7 @@ package restful
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 	"net/http"
 
 	"git.internal.yunify.com/qxp/misc/resp"
@@ -26,7 +27,7 @@ type Router struct {
 }
 
 // NewRouter 开启路由
-func NewRouter(ctx context.Context, c *config.Config, rf []RouterOption) (*Router, error) {
+func NewRouter(ctx context.Context, c *config.Config, rf []RouterOption, log logr.Logger) (*Router, error) {
 	if c.Model == "" || (c.Model != ReleaseMode && c.Model != DebugMode) {
 		c.Model = ReleaseMode
 	}
@@ -39,10 +40,80 @@ func NewRouter(ctx context.Context, c *config.Config, rf []RouterOption) (*Route
 		fn(v1)
 	}
 	// 创建跟消息相关的路由
+	err := createTemplateRouter(v1, c, log)
+	if err != nil {
+		return nil, err
+	}
+	// 创建跟接收消息相关的路由
+	err = createMessageRouter(v1, c, log)
+	if err != nil {
+		return nil, err
+	}
+	err = newMeSendRoute(v1, c, log)
+	if err != nil {
+		return nil, err
+	}
 	return &Router{
 		c:      c,
 		engine: engine,
 	}, nil
+}
+
+func createTemplateRouter(v1 *gin.RouterGroup, c *config.Config, log logr.Logger) error {
+	template, err := NewTemplate(c, log)
+
+	if err != nil {
+		return err
+	}
+	k := v1.Group("/template")
+	{
+		k.POST("/create", template.CreateTemplate)
+		k.POST("/update", template.UpdateTemplate)
+		k.POST("/delete", template.DeleteTemplate)
+		k.POST("/queryPage", template.QueryTemplatePage)
+
+	}
+	return nil
+}
+
+func createMessageRouter(v1 *gin.RouterGroup, c *config.Config, log logr.Logger) error {
+
+	message, err := NewMessage(c, log)
+
+	if err != nil {
+		return err
+	}
+	k := v1.Group("/manager")
+	{
+		k.POST("/create", message.SaveMessage)
+		k.POST("/delete", message.DeleteMessage)
+		k.POST("/getMesByID", message.GetMessageByID)
+		k.POST("/getMesList", message.MessageList)
+	}
+	return nil
+}
+
+func newMeSendRoute(v1 *gin.RouterGroup, c *config.Config, log logr.Logger) error {
+	record, err := NewRecord(c, log)
+	if err != nil {
+		return err
+	}
+	k := v1.Group("/center")
+	{
+		k.POST("/getById", record.CenterMsByID)
+
+		k.POST("/getNumber", record.GetNumber)
+
+		k.POST("/allRead", record.AllRead)
+
+		k.POST("/deleteByIds", record.DeleteByIDs)
+		//  根据ids，读消息
+		k.POST("/readByIds", record.ReadByIDs)
+
+		k.POST("/getList", record.GetMesSendList)
+
+	}
+	return nil
 }
 
 // Run 启动服务
