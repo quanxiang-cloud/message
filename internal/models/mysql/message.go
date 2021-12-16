@@ -66,7 +66,7 @@ func (m *messageRepo) List(db *gorm.DB, status, types int8, keyword string, page
 	if keyword != "" {
 		s := "%"
 		keyword = s + keyword + s
-		ql = ql.Where("title like ? or handle_name like ? ", keyword, keyword)
+		ql = ql.Where("title like ? or creator_name like ? ", keyword, keyword)
 	}
 	var total int64
 	ql.Count(&total)

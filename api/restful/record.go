@@ -47,12 +47,12 @@ func (m *Record) CenterMsByID(c *gin.Context) {
 //GetNumber  dep  reciver get not read number
 func (m *Record) GetNumber(c *gin.Context) {
 	req := &service.GetNumberReq{}
-	req.ReceiverID = header2.GetProfile(c).UserID
 	if err := c.ShouldBind(req); err != nil {
 		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c).String)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	req.ReceiverID = header2.GetProfile(c).UserID
 	resp.Format(m.record.GetNumber(logger.CTXTransfer(c), req)).Context(c)
 
 }

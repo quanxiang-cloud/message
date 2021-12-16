@@ -99,9 +99,9 @@ func (m *recordRepo) ReadByID(db *gorm.DB, id string) error {
 	}).Error
 }
 
-func (m *recordRepo) GetByCondition(db *gorm.DB, listID string, reciverID string) (*models.Record, error) {
+func (m *recordRepo) GetByCondition(db *gorm.DB, listID string, receiverID string) (*models.Record, error) {
 	msSend := new(models.Record)
-	err := db.Table(m.TableName()).Where("list_id = ? and receiver_id = ? ", listID, reciverID).Find(msSend).Error
+	err := db.Table(m.TableName()).Where("list_id = ? and receiver_id = ? ", listID, receiverID).Find(msSend).Error
 	if err != nil {
 		return nil, err
 	}

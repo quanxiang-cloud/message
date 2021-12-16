@@ -135,12 +135,12 @@ type QueryTemplateReq struct {
 
 // QueryTemplateResp resp
 type QueryTemplateResp struct {
-	Template []*TempalateVo `json:"template"`
-	Total    int64          `josn:"total"`
+	Template []*TemplateVo `json:"template"`
+	Total    int64         `josn:"total"`
 }
 
-// TempalateVo vo
-type TempalateVo struct {
+// TemplateVo vo
+type TemplateVo struct {
 	ID        string `josn:"id"`
 	Title     string `json:"title"`
 	Content   string `json:"content"`
@@ -148,7 +148,7 @@ type TempalateVo struct {
 	UpdatedAt int64  `json:"updated_at"`
 }
 
-// QueryTemplate getlist
+// QueryTemplate query
 func (t *template) QueryTemplate(ctx context.Context, req *QueryTemplateReq) (*QueryTemplateResp, error) {
 
 	templates, total, err := t.templateRepo.QueryTemplate(t.db, req.Title, req.Page, req.Limit)
@@ -157,17 +157,17 @@ func (t *template) QueryTemplate(ctx context.Context, req *QueryTemplateReq) (*Q
 	}
 	resp := &QueryTemplateResp{
 
-		Template: make([]*TempalateVo, len(templates)),
+		Template: make([]*TemplateVo, len(templates)),
 	}
 	for i, value := range templates {
-		resp.Template[i] = new(TempalateVo)
+		resp.Template[i] = new(TemplateVo)
 		clone(resp.Template[i], value)
 	}
 	resp.Total = total
 	return resp, nil
 
 }
-func clone(dst *TempalateVo, src *models.Template) {
+func clone(dst *TemplateVo, src *models.Template) {
 	dst.ID = src.ID
 	dst.Title = src.Title
 	dst.Content = src.Content

@@ -74,3 +74,19 @@ func (m *Message) GetMessageByID(c *gin.Context) {
 	}
 	resp.Format(m.message.GetMesByID(logger.CTXTransfer(c), req)).Context(c)
 }
+
+func (m *Message) BatchMessage(c *gin.Context) {
+	type batch []*service.CreateMessageReq
+	batchData := make(batch, 0)
+	err := c.ShouldBindJSON(batchData)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
+	for _, message := range batchData {
+		_, _ = m.message.CreateMessage(c, message)
+
+	}
+	resp.Format(struct{}{}, nil).Context(c)
+
+}

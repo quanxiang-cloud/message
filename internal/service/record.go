@@ -223,11 +223,11 @@ func (ms *record) RecordList(ctx context.Context, req *RecordListReq) (*RecordLi
 
 	for i, msSend := range msList {
 		resp.List[i] = new(RecordVo)
-		mslist, err := ms.messageRepo.Get(ms.db, msSend.ListID)
+		mess, err := ms.messageRepo.Get(ms.db, msSend.ListID)
 		if err != nil {
 			return nil, err
 		}
-		cloneMsSend(resp.List[i], msSend, mslist)
+		cloneMsSend(resp.List[i], msSend, mess)
 	}
 	resp.Total = total
 	return resp, nil

@@ -79,7 +79,7 @@ type CreateMessageReq struct {
 
 type data struct {
 	Letter *letter `json:"letter"`
-	Email  *email  `json:"sms"`
+	Email  *email  `json:"email"`
 	Web    *web    `json:"web"`
 }
 
@@ -137,6 +137,7 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 	var err error
 	if web.ID != "" {
 		err = m.messageRepo.Delete(tx, web.ID)
+		tx.Rollback()
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +160,6 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 		Content:     convertContent,
 	}
 	err = m.messageRepo.Create(tx, messages)
-
 	if err != nil {
 		tx.Rollback()
 		return nil, err
@@ -191,6 +191,7 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 				record := &models.Record{
 					ID:           id2.GenID(),
 					ListID:       messageID,
+					ReadStatus:   constant.NotRead,
 					Types:        webData.Types,
 					ReceiverID:   u.ID,
 					ReceiverName: u.UserName,
@@ -208,6 +209,7 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 				ID:           id2.GenID(),
 				Types:        webData.Types,
 				ListID:       messageID,
+				ReadStatus:   constant.NotRead,
 				ReceiverID:   value.ID,
 				ReceiverName: value.Name,
 				CreatedAt:    time2.NowUnix(),
@@ -299,6 +301,9 @@ func (m *message) convertContent(content *content) (string, error) {
 	t, err := m.templateRepo.Get(m.db, content.TemplateID)
 	if err != nil {
 		return "", err
+	}
+	if t == nil {
+		return "", error2.NewError(code.ErrNotExistTemplate)
 	}
 	t2 := template2.New(t.Content)
 	buffer := new(bytes.Buffer)
@@ -392,15 +397,16 @@ type ListResp struct {
 
 // MesVO vo
 type MesVO struct {
-	ID          string                `json:"id"`
-	Types       constant.MessageTypes `json:"types"`
-	Title       string                `json:"title"`
-	CreatorName string                `json:"createdName"`
-	CreatedAt   int64                 `json:"createdAt"`
-	SendNum     int                   `json:"sendNum"`
-	Success     int                   `json:"success"`
-	Fail        int                   `json:"fail"`
-	Files       models.Files          `json:"files"`
+	ID          string                 `json:"id"`
+	Types       constant.MessageTypes  `json:"types"`
+	Title       string                 `json:"title"`
+	CreatorName string                 `json:"createdName"`
+	CreatedAt   int64                  `json:"createdAt"`
+	SendNum     int                    `json:"sendNum"`
+	Success     int                    `json:"success"`
+	Fail        int                    `json:"fail"`
+	Files       models.Files           `json:"files"`
+	Status      constant.MessageStatus `json:"status"`
 }
 
 // MessageList   get message_list by condition
@@ -428,4 +434,6 @@ func cloneMs(dst *MesVO, src *models.MessageList) {
 	dst.Success = src.Success
 	dst.Fail = src.Fail
 	dst.Files = src.Files
+	dst.Types = src.Types
+	dst.Status = src.Status
 }

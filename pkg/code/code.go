@@ -9,12 +9,12 @@ func init() {
 const (
 	// ErrDeleteMsState 删除错误的消息
 	ErrDeleteMsState = 40014000001
-	//ErrNotExistTemplateMsState 模板不存在
-	ErrNotExistTemplateMsState = 40014000002
+	//ErrNotExistTemplate 模板不存在
+	ErrNotExistTemplate = 40014000002
 )
 
 // CodeTable 码表
 var CodeTable = map[int]string{
-	ErrDeleteMsState:           "该条消息不处于草稿阶段，不能删除",
-	ErrNotExistTemplateMsState: "消息模板不存在",
+	ErrDeleteMsState:    "该条消息不处于草稿阶段，不能删除",
+	ErrNotExistTemplate: "消息模板不存在",
 }
