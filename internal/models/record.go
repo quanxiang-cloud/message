@@ -1,7 +1,7 @@
 package models
 
 import (
-	logic2 "github.com/quanxiang-cloud/message/internal/logic"
+	"github.com/quanxiang-cloud/message/internal/constant"
 	"gorm.io/gorm"
 )
 
@@ -15,9 +15,9 @@ type Record struct {
 
 	ReceiverName string
 
-	Types logic2.MsListStatus
+	Types constant.MessageTypes
 
-	ReadStatus logic2.MSReadStatus // 1 not read    2 read
+	ReadStatus constant.ReadStatus // 1 not read    2 read
 
 	CreatedAt int64
 }
@@ -25,7 +25,7 @@ type Record struct {
 // Result 未读条数结果集定义
 type Result struct {
 	Total int64
-	Sort  logic2.MesSort
+	Types constant.MessageTypes
 }
 
 // RecordRepo 消息实体操作接口定义
@@ -42,11 +42,11 @@ type RecordRepo interface {
 
 	ReadByIDs(*gorm.DB, []string) error
 
-	List(*gorm.DB, int8, int8, int, int, string, string) ([]*Record, int64, error)
+	List(*gorm.DB, int8, int8, int, int, string) ([]*Record, int64, error)
 
 	ReadByID(*gorm.DB, string) error
 
-	UpdateStatus(*gorm.DB, string, logic2.MesStatus) error
+	UpdateStatus(*gorm.DB, string, constant.ReadStatus) error
 
 	GetByCondition(*gorm.DB, string, string) (*Record, error)
 }

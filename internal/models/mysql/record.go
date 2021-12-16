@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	logic2 "github.com/quanxiang-cloud/message/internal/logic"
+	"github.com/quanxiang-cloud/message/internal/constant"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"gorm.io/gorm"
 )
@@ -42,7 +42,7 @@ func (m *recordRepo) GetByID(db *gorm.DB, id string) (*models.Record, error) {
 func (m *recordRepo) GetNumber(db *gorm.DB, reciverID string) ([]*models.Result, error) {
 	results := make([]*models.Result, 0)
 
-	err := db.Table(m.TableName()).Select(" count(*) as total ,sort ").Where("read_status = 1 and channel = 'letter' and `status` = 1  and reciver_id  = ? ", reciverID).Group("sort").Scan(&results).Error
+	err := db.Table(m.TableName()).Select(" count(*) as total ,sort ").Where("read_status = 1 and receiver_id  = ? ", reciverID).Group("sort").Scan(&results).Error
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (m *recordRepo) GetNumber(db *gorm.DB, reciverID string) ([]*models.Result,
 
 // UpdateReadStatus 把某个人的消息，标记为已读
 func (m *recordRepo) UpdateReadStatus(db *gorm.DB, reciverID string) error {
-	return db.Table(m.TableName()).Where("status = 1  and reciver_id = ?", reciverID).Updates(map[string]interface{}{
+	return db.Table(m.TableName()).Where("status = 1  and receiver_id = ?", reciverID).Updates(map[string]interface{}{
 		"read_status": 2,
 	}).Error
 }
@@ -65,27 +65,23 @@ func (m *recordRepo) DeleteByIDs(db *gorm.DB, arrIds []string) error {
 func (m *recordRepo) ReadByIDs(db *gorm.DB, arrIds []string) error {
 	//跟新
 
-	return db.Table(m.TableName()).Where("status = 1  and id in ?", arrIds).Updates(map[string]interface{}{
+	return db.Table(m.TableName()).Where("id in ?", arrIds).Updates(map[string]interface{}{
 		"read_status": 2,
 	}).Error
 }
 
 // List list
-func (m *recordRepo) List(db *gorm.DB, readStatus int8, sort int8, page, limit int, reciverID, channel string) ([]*models.Record, int64, error) {
+func (m *recordRepo) List(db *gorm.DB, readStatus int8, types int8, page, limit int, receiverID string) ([]*models.Record, int64, error) {
 	ql := db.Table(m.TableName())
 	if readStatus != 0 {
 		ql = ql.Where("read_status = ? ", readStatus)
 	}
-	if sort != 0 {
-		ql = ql.Where("sort = ? ", sort)
+	if types != 0 {
+		ql = ql.Where("types = ? ", types)
 	}
-	if reciverID != "" {
-		ql = ql.Where("reciver_id = ? ", reciverID)
+	if receiverID != "" {
+		ql = ql.Where("receiver_id = ? ", receiverID)
 	}
-	if channel != "" {
-		ql = ql.Where("channel = ? ", channel)
-	}
-	ql = ql.Where("status = 1 ") // 只获取发送成功的消息
 
 	var total int64
 	ql.Count(&total)
@@ -105,7 +101,7 @@ func (m *recordRepo) ReadByID(db *gorm.DB, id string) error {
 }
 
 // UpdateStatus UpdateStatus
-func (m *recordRepo) UpdateStatus(db *gorm.DB, id string, status logic2.MesStatus) error {
+func (m *recordRepo) UpdateStatus(db *gorm.DB, id string, status constant.ReadStatus) error {
 	return db.Table(m.TableName()).Where("id = ?", id).Updates(map[string]interface{}{
 		"status": status,
 	}).Error
@@ -113,7 +109,7 @@ func (m *recordRepo) UpdateStatus(db *gorm.DB, id string, status logic2.MesStatu
 
 func (m *recordRepo) GetByCondition(db *gorm.DB, listID string, reciverID string) (*models.Record, error) {
 	msSend := new(models.Record)
-	err := db.Table(m.TableName()).Where("list_id = ? and reciver_id = ? ", listID, reciverID).Find(msSend).Error
+	err := db.Table(m.TableName()).Where("list_id = ? and receiver_id = ? ", listID, reciverID).Find(msSend).Error
 	if err != nil {
 		return nil, err
 	}
