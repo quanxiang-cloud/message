@@ -15,8 +15,8 @@ import (
 
 // Record 消息发送结构体
 type Record struct {
-	messageSend service.Record
-	log         logr.Logger
+	record service.Record
+	log    logr.Logger
 }
 
 // NewRecord NewRecord
@@ -28,8 +28,8 @@ func NewRecord(conf *config.Config, log logr.Logger) (*Record, error) {
 		return nil, err
 	}
 	return &Record{
-		messageSend: m,
-		log:         log.WithName("controller record "),
+		record: m,
+		log:    log.WithName("controller record "),
 	}, nil
 }
 
@@ -41,7 +41,7 @@ func (m *Record) CenterMsByID(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.messageSend.CenterMsByID(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.CenterMsByID(logger.CTXTransfer(c), req)).Context(c)
 }
 
 //GetNumber  dep  reciver get not read number
@@ -53,7 +53,7 @@ func (m *Record) GetNumber(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.messageSend.GetNumber(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.GetNumber(logger.CTXTransfer(c), req)).Context(c)
 
 }
 
@@ -66,7 +66,7 @@ func (m *Record) AllRead(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.messageSend.AllRead(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.AllRead(logger.CTXTransfer(c), req)).Context(c)
 }
 
 //DeleteByIDs  delete message by IDs
@@ -77,7 +77,7 @@ func (m *Record) DeleteByIDs(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.messageSend.DeleteByIDs(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.DeleteByIDs(logger.CTXTransfer(c), req)).Context(c)
 }
 
 // ReadByIDs read message by Ids
@@ -88,12 +88,12 @@ func (m *Record) ReadByIDs(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.messageSend.ReadByIDs(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.ReadByIDs(logger.CTXTransfer(c), req)).Context(c)
 }
 
 // GetMesSendList get by condition
 func (m *Record) GetMesSendList(c *gin.Context) {
-	req := &service.GetMesSendListReq{}
+	req := &service.RecordListReq{}
 	req.ReceiverID = header2.GetProfile(c).UserID
 
 	if err := c.ShouldBind(req); err != nil {
@@ -101,5 +101,5 @@ func (m *Record) GetMesSendList(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.messageSend.GetMesSendList(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.RecordList(logger.CTXTransfer(c), req)).Context(c)
 }

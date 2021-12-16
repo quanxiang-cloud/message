@@ -1,13 +1,13 @@
 package constant
 
-// RecordStatus 消息读取状态
-type RecordStatus int
+// ReadStatus 消息读取状态
+type ReadStatus int
 
 const (
 	// NotRead 未读
-	NotRead RecordStatus = 1
+	NotRead ReadStatus = 1
 	// AlreadyRead 已读
-	AlreadyRead RecordStatus = 2
+	AlreadyRead ReadStatus = 2
 )
 
 // MessageTypes 系统消息 通知消息

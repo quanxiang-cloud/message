@@ -4,8 +4,7 @@ import (
 	"context"
 	"git.internal.yunify.com/qxp/misc/logger"
 	"git.internal.yunify.com/qxp/misc/mysql2"
-	"github.com/quanxiang-cloud/message/internal/core"
-	logic2 "github.com/quanxiang-cloud/message/internal/logic"
+	"github.com/quanxiang-cloud/message/internal/constant"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"github.com/quanxiang-cloud/message/internal/models/mysql"
 	"github.com/quanxiang-cloud/message/pkg/config"
@@ -19,7 +18,7 @@ type Record interface {
 	AllRead(ctx context.Context, req *AllReadReq) (*AllReadResp, error)
 	DeleteByIDs(ctx context.Context, req *DeleteByIDsReq) (*DeleteByIDsResp, error)
 	ReadByIDs(ctx context.Context, req *ReadByIDsReq) (*ReadByIdsResp, error)
-	GetMesSendList(ctx context.Context, req *GetMesSendListReq) (*GetMesSendListResp, error)
+	RecordList(ctx context.Context, req *RecordListReq) (*RecordListResp, error)
 }
 
 // NewRecord create
@@ -57,15 +56,13 @@ type CenterMsByIDResp struct {
 	Content string `json:"content"`
 	Title   string `json:"title"`
 
-	HandleName string              `json:"handle_name"`
-	ReadStatus logic2.MSReadStatus `json:"read_status"`
+	CreatorName string              `json:"creatorName"`
+	ReadStatus  constant.ReadStatus `json:"readStatus"`
 
-	Sort logic2.MesSort `json:"sort"`
+	CreatedAt int64 `json:"createdAt"`
 
-	CreatedAt int64 `json:"created_at"`
-
-	UpdatedAt int64 `json:"update_at"`
-	//MesAttachment []models.File `json:"mes_attachment"`
+	UpdatedAt int64        `json:"update_at"`
+	Files     models.Files `json:"files"`
 }
 
 // CenterMsByID byID
@@ -84,24 +81,15 @@ func (ms *record) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*Cent
 	var resp *CenterMsByIDResp
 	if msSend != nil {
 		resp = &CenterMsByIDResp{
-			ID:         msSend.ID,
-			Title:      "",
-			HandleName: "",
-			CreatedAt:  msSend.CreatedAt,
-			UpdatedAt:  0,
+			ID:          msSend.ID,
+			Title:       "",
+			CreatorName: "",
+			CreatedAt:   msSend.CreatedAt,
+
 			ReadStatus: msSend.ReadStatus,
 			//	MesAttachment: nil ,
 
 		}
-		//if msSend.Content != "" {
-		//	dataByte, err := base64.StdEncoding.DecodeString(msSend.Content) //  解码
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//	var ct string
-		//	json.Unmarshal(dataByte, &ct)
-		//	resp.Content = ct
-		//}
 	}
 	return resp, nil
 }
@@ -118,8 +106,8 @@ type GetNumberResp struct {
 
 // GetNumberRespVO vo
 type GetNumberRespVO struct {
-	Total int64          `json:"total"`
-	Sort  logic2.MesSort `json:"sort"`
+	Total int64                 `json:"total"`
+	Types constant.MessageTypes `json:"types"`
 }
 
 // GetNumber 获取不同消息类型，未读的条数
@@ -135,7 +123,7 @@ func (ms *record) GetNumber(ctx context.Context, req *GetNumberReq) (*GetNumberR
 	for i, rs := range numResult {
 		vo := &GetNumberRespVO{
 			Total: rs.Total,
-			Sort:  rs.Sort,
+			Types: rs.Types,
 		}
 		resp.TypeNum[i] = vo
 	}
@@ -196,52 +184,49 @@ func (ms *record) ReadByIDs(ctx context.Context, req *ReadByIDsReq) (*ReadByIdsR
 	return &ReadByIdsResp{}, nil
 }
 
-// GetMesSendListReq req
-type GetMesSendListReq struct {
-	ReadStatus int8   `json:"read_status"`
+// RecordListReq req
+type RecordListReq struct {
+	ReadStatus int8   `json:"readStatus"`
 	MesSort    int8   `json:"sort"`
-	ReceiverID string `json:"ReceiverID"`
-	Channel    string `json:"channel"`
+	ReceiverID string `json:"receiverID"`
 	Page       int    `json:"page"`
 	Limit      int    `json:"limit"`
 }
 
-// GetMesSendListResp resp
-type GetMesSendListResp struct {
-	List  []*MesListVO `json:"mes_list"`
-	Total int64        `json:"total"`
+// RecordListResp resp
+type RecordListResp struct {
+	List  []*RecordVo `json:"list"`
+	Total int64       `json:"total"`
 }
 
-// MesListVO vo
-type MesListVO struct {
-	ID         string              `json:"id"`
-	Title      string              `json:"title"`
-	CreatedAt  int64               `json:"updated_at"`
-	Sort       logic2.MesSort      `json:"sort"`
-	ReadStatus logic2.MSReadStatus `json:"read_status"`
+// RecordVo vo
+type RecordVo struct {
+	ID         string                `json:"id"`
+	Title      string                `json:"title"`
+	CreatedAt  int64                 `json:"updated_at"`
+	Types      constant.MessageTypes `json:"types"`
+	ReadStatus constant.ReadStatus   `json:"readStatus"`
 }
 
-// GetMesSendList list
-func (ms *record) GetMesSendList(ctx context.Context, req *GetMesSendListReq) (*GetMesSendListResp, error) {
-	if req.Channel == "" {
-		req.Channel = core.Letter.String()
-	}
-	msList, total, err := ms.recordRepo.List(ms.db, req.ReadStatus, req.MesSort, req.Page, req.Limit, req.ReceiverID, req.Channel)
+// RecordList RecordList
+func (ms *record) RecordList(ctx context.Context, req *RecordListReq) (*RecordListResp, error) {
+
+	msList, total, err := ms.recordRepo.List(ms.db, req.ReadStatus, req.MesSort, req.Page, req.Limit, req.ReceiverID)
 	if err != nil {
 		return nil, err
 	}
-	resp := &GetMesSendListResp{
-		List: make([]*MesListVO, len(msList)),
+	resp := &RecordListResp{
+		List: make([]*RecordVo, len(msList)),
 	}
 	for i, msSend := range msList {
-		resp.List[i] = new(MesListVO)
+		resp.List[i] = new(RecordVo)
 		cloneMsSend(resp.List[i], msSend)
 	}
 	resp.Total = total
 	return resp, nil
 }
 
-func cloneMsSend(dst *MesListVO, src *models.Record) {
+func cloneMsSend(dst *RecordVo, src *models.Record) {
 	dst.ID = src.ID
 	dst.Title = ""
 	dst.CreatedAt = src.CreatedAt
