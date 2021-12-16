@@ -79,7 +79,9 @@ func proxy(url *url.URL, transport *http.Transport) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		proxy := httputil.NewSingleHostReverseProxy(url)
 		proxy.Transport = transport
-		proxy.ServeHTTP(c.Writer, c.Request)
+		r := c.Request
+		r.Host = url.Host
+		proxy.ServeHTTP(c.Writer, r)
 	}
 }
 
