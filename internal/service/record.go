@@ -2,20 +2,18 @@ package service
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
-
 	"git.internal.yunify.com/qxp/misc/logger"
 	"git.internal.yunify.com/qxp/misc/mysql2"
 	"github.com/quanxiang-cloud/message/internal/core"
+	logic2 "github.com/quanxiang-cloud/message/internal/logic"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"github.com/quanxiang-cloud/message/internal/models/mysql"
 	"github.com/quanxiang-cloud/message/pkg/config"
 	"gorm.io/gorm"
 )
 
-// Send message send
-type Send interface {
+// Record message send
+type Record interface {
 	CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*CenterMsByIDResp, error)
 	GetNumber(ctx context.Context, req *GetNumberReq) (*GetNumberResp, error)
 	AllRead(ctx context.Context, req *AllReadReq) (*AllReadResp, error)
@@ -24,8 +22,8 @@ type Send interface {
 	GetMesSendList(ctx context.Context, req *GetMesSendListReq) (*GetMesSendListResp, error)
 }
 
-// NewMessageSend create
-func NewMessageSend(conf *config.Config) (Send, error) {
+// NewRecord create
+func NewRecord(conf *config.Config) (Record, error) {
 	db, err := mysql2.New(conf.Mysql, logger.Logger)
 	if err != nil {
 		return nil, err
@@ -34,17 +32,17 @@ func NewMessageSend(conf *config.Config) (Send, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &messageSend{
-		conf:            conf,
-		db:              db,
-		messageSendRepo: mysql.NewMessageSendRepo(),
+	return &record{
+		conf:       conf,
+		db:         db,
+		recordRepo: mysql.NewRecordRepo(),
 	}, nil
 }
 
-type messageSend struct {
-	conf            *config.Config
-	db              *gorm.DB
-	messageSendRepo models.MessageSendRepo
+type record struct {
+	conf       *config.Config
+	db         *gorm.DB
+	recordRepo models.RecordRepo
 }
 
 // CenterMsByIDReq req
@@ -60,25 +58,25 @@ type CenterMsByIDResp struct {
 	Title   string `json:"title"`
 
 	HandleName string              `json:"handle_name"`
-	ReadStatus models.MSReadStatus `json:"read_status"`
+	ReadStatus logic2.MSReadStatus `json:"read_status"`
 
-	Sort models.MesSort `json:"sort"`
+	Sort logic2.MesSort `json:"sort"`
 
 	CreatedAt int64 `json:"created_at"`
 
-	UpdatedAt     int64               `json:"update_at"`
-	MesAttachment []models.Attachment `json:"mes_attachment"`
+	UpdatedAt int64 `json:"update_at"`
+	//MesAttachment []models.File `json:"mes_attachment"`
 }
 
 // CenterMsByID byID
-func (ms *messageSend) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*CenterMsByIDResp, error) {
-	msSend, err := ms.messageSendRepo.GetByID(ms.db, req.ID)
+func (ms *record) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*CenterMsByIDResp, error) {
+	msSend, err := ms.recordRepo.GetByID(ms.db, req.ID)
 	if err != nil {
 		return nil, err
 	}
 	// 是否在查询消息的时候，把消息标记为已读
 	if req.Read {
-		err = ms.messageSendRepo.ReadByID(ms.db, req.ID)
+		err = ms.recordRepo.ReadByID(ms.db, req.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -86,32 +84,31 @@ func (ms *messageSend) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (
 	var resp *CenterMsByIDResp
 	if msSend != nil {
 		resp = &CenterMsByIDResp{
-			ID: msSend.ID,
+			ID:         msSend.ID,
+			Title:      "",
+			HandleName: "",
+			CreatedAt:  msSend.CreatedAt,
+			UpdatedAt:  0,
+			ReadStatus: msSend.ReadStatus,
+			//	MesAttachment: nil ,
 
-			Title:         msSend.Title,
-			HandleName:    msSend.HandleName,
-			CreatedAt:     msSend.CreatedAt,
-			UpdatedAt:     msSend.UpdatedAt,
-			ReadStatus:    msSend.ReadStatus,
-			MesAttachment: msSend.MesAttachment,
-			Sort:          msSend.Sort,
 		}
-		if msSend.Content != "" {
-			dataByte, err := base64.StdEncoding.DecodeString(msSend.Content) //  解码
-			if err != nil {
-				return nil, err
-			}
-			var ct string
-			json.Unmarshal(dataByte, &ct)
-			resp.Content = ct
-		}
+		//if msSend.Content != "" {
+		//	dataByte, err := base64.StdEncoding.DecodeString(msSend.Content) //  解码
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	var ct string
+		//	json.Unmarshal(dataByte, &ct)
+		//	resp.Content = ct
+		//}
 	}
 	return resp, nil
 }
 
 // GetNumberReq req
 type GetNumberReq struct {
-	ReciverID string `json:"reciver_id"`
+	ReceiverID string `json:"reciver_id"`
 }
 
 // GetNumberResp resp
@@ -122,12 +119,12 @@ type GetNumberResp struct {
 // GetNumberRespVO vo
 type GetNumberRespVO struct {
 	Total int64          `json:"total"`
-	Sort  models.MesSort `json:"sort"`
+	Sort  logic2.MesSort `json:"sort"`
 }
 
 // GetNumber 获取不同消息类型，未读的条数
-func (ms *messageSend) GetNumber(ctx context.Context, req *GetNumberReq) (*GetNumberResp, error) {
-	numResult, err := ms.messageSendRepo.GetNumber(ms.db, req.ReciverID)
+func (ms *record) GetNumber(ctx context.Context, req *GetNumberReq) (*GetNumberResp, error) {
+	numResult, err := ms.recordRepo.GetNumber(ms.db, req.ReceiverID)
 	if err != nil {
 		return nil, err
 	}
@@ -155,8 +152,8 @@ type AllReadResp struct {
 }
 
 // AllRead allread
-func (ms *messageSend) AllRead(ctx context.Context, req *AllReadReq) (*AllReadResp, error) {
-	err := ms.messageSendRepo.UpdateReadStatus(ms.db, req.ReciverID)
+func (ms *record) AllRead(ctx context.Context, req *AllReadReq) (*AllReadResp, error) {
+	err := ms.recordRepo.UpdateReadStatus(ms.db, req.ReciverID)
 	if err != nil {
 		return nil, err
 	}
@@ -172,9 +169,9 @@ type DeleteByIDsReq struct {
 type DeleteByIDsResp struct {
 }
 
-// DeleteByIDs byid
-func (ms *messageSend) DeleteByIDs(ctx context.Context, req *DeleteByIDsReq) (*DeleteByIDsResp, error) {
-	err := ms.messageSendRepo.DeleteByIDs(ms.db, req.ArrID)
+// DeleteByIDs byID
+func (ms *record) DeleteByIDs(ctx context.Context, req *DeleteByIDsReq) (*DeleteByIDsResp, error) {
+	err := ms.recordRepo.DeleteByIDs(ms.db, req.ArrID)
 	if err != nil {
 		return nil, err
 	}
@@ -190,9 +187,9 @@ type ReadByIDsReq struct {
 type ReadByIdsResp struct {
 }
 
-// ReadByIDs readbyids
-func (ms *messageSend) ReadByIDs(ctx context.Context, req *ReadByIDsReq) (*ReadByIdsResp, error) {
-	err := ms.messageSendRepo.ReadByIDs(ms.db, req.ArrID)
+// ReadByIDs readByIDs
+func (ms *record) ReadByIDs(ctx context.Context, req *ReadByIDsReq) (*ReadByIdsResp, error) {
+	err := ms.recordRepo.ReadByIDs(ms.db, req.ArrID)
 	if err != nil {
 		return nil, err
 	}
@@ -201,9 +198,9 @@ func (ms *messageSend) ReadByIDs(ctx context.Context, req *ReadByIDsReq) (*ReadB
 
 // GetMesSendListReq req
 type GetMesSendListReq struct {
-	ReadStatus int8 `json:"read_status"`
-	MesSort    int8 `json:"sort"`
-	ReciverID  string
+	ReadStatus int8   `json:"read_status"`
+	MesSort    int8   `json:"sort"`
+	ReceiverID string `json:"ReceiverID"`
 	Channel    string `json:"channel"`
 	Page       int    `json:"page"`
 	Limit      int    `json:"limit"`
@@ -220,16 +217,16 @@ type MesListVO struct {
 	ID         string              `json:"id"`
 	Title      string              `json:"title"`
 	CreatedAt  int64               `json:"updated_at"`
-	Sort       models.MesSort      `json:"sort"`
-	ReadStatus models.MSReadStatus `json:"read_status"`
+	Sort       logic2.MesSort      `json:"sort"`
+	ReadStatus logic2.MSReadStatus `json:"read_status"`
 }
 
 // GetMesSendList list
-func (ms *messageSend) GetMesSendList(ctx context.Context, req *GetMesSendListReq) (*GetMesSendListResp, error) {
+func (ms *record) GetMesSendList(ctx context.Context, req *GetMesSendListReq) (*GetMesSendListResp, error) {
 	if req.Channel == "" {
 		req.Channel = core.Letter.String()
 	}
-	msList, total, err := ms.messageSendRepo.List(ms.db, req.ReadStatus, req.MesSort, req.Page, req.Limit, req.ReciverID, req.Channel)
+	msList, total, err := ms.recordRepo.List(ms.db, req.ReadStatus, req.MesSort, req.Page, req.Limit, req.ReceiverID, req.Channel)
 	if err != nil {
 		return nil, err
 	}
@@ -244,10 +241,9 @@ func (ms *messageSend) GetMesSendList(ctx context.Context, req *GetMesSendListRe
 	return resp, nil
 }
 
-func cloneMsSend(dst *MesListVO, src *models.MessageSend) {
+func cloneMsSend(dst *MesListVO, src *models.Record) {
 	dst.ID = src.ID
-	dst.Title = src.Title
+	dst.Title = ""
 	dst.CreatedAt = src.CreatedAt
-	dst.Sort = src.Sort
 	dst.ReadStatus = src.ReadStatus
 }
