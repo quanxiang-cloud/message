@@ -57,10 +57,10 @@ func (m *Record) GetNumber(c *gin.Context) {
 
 }
 
-// AllRead update already read basis of reciverID
+// AllRead update already read basis of receiverID
 func (m *Record) AllRead(c *gin.Context) {
 	req := &service.AllReadReq{}
-	req.ReciverID = header2.GetProfile(c).UserID
+	req.ReceiverID = header2.GetProfile(c).UserID
 	if err := c.ShouldBind(req); err != nil {
 		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c).String)
 		c.AbortWithError(http.StatusInternalServerError, err)

@@ -32,16 +32,18 @@ func NewRecord(conf *config.Config) (Record, error) {
 		return nil, err
 	}
 	return &record{
-		conf:       conf,
-		db:         db,
-		recordRepo: mysql.NewRecordRepo(),
+		conf:        conf,
+		db:          db,
+		recordRepo:  mysql.NewRecordRepo(),
+		messageRepo: mysql.NewMessageRepo(),
 	}, nil
 }
 
 type record struct {
-	conf       *config.Config
-	db         *gorm.DB
-	recordRepo models.RecordRepo
+	conf        *config.Config
+	db          *gorm.DB
+	recordRepo  models.RecordRepo
+	messageRepo models.MessageRepo
 }
 
 // CenterMsByIDReq req
@@ -52,24 +54,23 @@ type CenterMsByIDReq struct {
 
 // CenterMsByIDResp resp
 type CenterMsByIDResp struct {
-	ID      string `json:"id"`
-	Content string `json:"content"`
-	Title   string `json:"title"`
-
+	ID          string              `json:"id"`
+	Content     string              `json:"content"`
+	Title       string              `json:"title"`
 	CreatorName string              `json:"creatorName"`
 	ReadStatus  constant.ReadStatus `json:"readStatus"`
-
-	CreatedAt int64 `json:"createdAt"`
-
-	UpdatedAt int64        `json:"update_at"`
-	Files     models.Files `json:"files"`
+	UpdatedAt   int64               `json:"updateAt"`
+	Files       models.Files        `json:"files"`
 }
 
 // CenterMsByID byID
 func (ms *record) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*CenterMsByIDResp, error) {
-	msSend, err := ms.recordRepo.GetByID(ms.db, req.ID)
+	record, err := ms.recordRepo.GetByID(ms.db, req.ID)
 	if err != nil {
 		return nil, err
+	}
+	if record == nil {
+		return &CenterMsByIDResp{}, nil
 	}
 	// 是否在查询消息的时候，把消息标记为已读
 	if req.Read {
@@ -78,30 +79,29 @@ func (ms *record) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*Cent
 			return nil, err
 		}
 	}
-	var resp *CenterMsByIDResp
-	if msSend != nil {
-		resp = &CenterMsByIDResp{
-			ID:          msSend.ID,
-			Title:       "",
-			CreatorName: "",
-			CreatedAt:   msSend.CreatedAt,
-
-			ReadStatus: msSend.ReadStatus,
-			//	MesAttachment: nil ,
-
-		}
+	message, err := ms.messageRepo.Get(ms.db, record.ListID)
+	if err != nil {
+		return nil, err
+	}
+	resp := &CenterMsByIDResp{
+		ID:          record.ID,
+		Title:       message.Title,
+		CreatorName: message.CreatorName,
+		UpdatedAt:   record.CreatedAt,
+		ReadStatus:  record.ReadStatus,
+		Files:       message.Files,
 	}
 	return resp, nil
 }
 
 // GetNumberReq req
 type GetNumberReq struct {
-	ReceiverID string `json:"reciver_id"`
+	ReceiverID string `json:"receiverId"`
 }
 
 // GetNumberResp resp
 type GetNumberResp struct {
-	TypeNum []*GetNumberRespVO `json:"type_num"`
+	TypeNum []*GetNumberRespVO `json:"typeNum"`
 }
 
 // GetNumberRespVO vo
@@ -132,7 +132,7 @@ func (ms *record) GetNumber(ctx context.Context, req *GetNumberReq) (*GetNumberR
 
 // AllReadReq req
 type AllReadReq struct {
-	ReciverID string
+	ReceiverID string
 }
 
 // AllReadResp resp
@@ -141,7 +141,7 @@ type AllReadResp struct {
 
 // AllRead allread
 func (ms *record) AllRead(ctx context.Context, req *AllReadReq) (*AllReadResp, error) {
-	err := ms.recordRepo.UpdateReadStatus(ms.db, req.ReciverID)
+	err := ms.recordRepo.UpdateReadStatus(ms.db, req.ReceiverID)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (ms *record) AllRead(ctx context.Context, req *AllReadReq) (*AllReadResp, e
 
 // DeleteByIDsReq req
 type DeleteByIDsReq struct {
-	ArrID []string `json:"arr_id"`
+	ArrID []string `json:"ids"`
 }
 
 // DeleteByIDsResp resp
@@ -168,7 +168,7 @@ func (ms *record) DeleteByIDs(ctx context.Context, req *DeleteByIDsReq) (*Delete
 
 // ReadByIDsReq req
 type ReadByIDsReq struct {
-	ArrID []string `json:"arr_id"`
+	ArrID []string `json:"ids"`
 }
 
 // ReadByIdsResp resp
@@ -186,8 +186,8 @@ func (ms *record) ReadByIDs(ctx context.Context, req *ReadByIDsReq) (*ReadByIdsR
 
 // RecordListReq req
 type RecordListReq struct {
-	ReadStatus int8   `json:"readStatus"`
-	MesSort    int8   `json:"sort"`
+	ReadStatus int    `json:"readStatus"`
+	Types      int    `json:"types"`
 	ReceiverID string `json:"receiverID"`
 	Page       int    `json:"page"`
 	Limit      int    `json:"limit"`
@@ -203,32 +203,42 @@ type RecordListResp struct {
 type RecordVo struct {
 	ID         string                `json:"id"`
 	Title      string                `json:"title"`
-	CreatedAt  int64                 `json:"updated_at"`
+	CreatedAt  int64                 `json:"createdAt"`
+	Content    string                `json:"content"`
 	Types      constant.MessageTypes `json:"types"`
 	ReadStatus constant.ReadStatus   `json:"readStatus"`
+	Files      models.Files          `json:"files"`
 }
 
 // RecordList RecordList
 func (ms *record) RecordList(ctx context.Context, req *RecordListReq) (*RecordListResp, error) {
 
-	msList, total, err := ms.recordRepo.List(ms.db, req.ReadStatus, req.MesSort, req.Page, req.Limit, req.ReceiverID)
+	msList, total, err := ms.recordRepo.List(ms.db, req.ReadStatus, req.Types, req.Page, req.Limit, req.ReceiverID)
 	if err != nil {
 		return nil, err
 	}
 	resp := &RecordListResp{
 		List: make([]*RecordVo, len(msList)),
 	}
+
 	for i, msSend := range msList {
 		resp.List[i] = new(RecordVo)
-		cloneMsSend(resp.List[i], msSend)
+		mslist, err := ms.messageRepo.Get(ms.db, msSend.ListID)
+		if err != nil {
+			return nil, err
+		}
+		cloneMsSend(resp.List[i], msSend, mslist)
 	}
 	resp.Total = total
 	return resp, nil
 }
 
-func cloneMsSend(dst *RecordVo, src *models.Record) {
+func cloneMsSend(dst *RecordVo, src *models.Record, message *models.MessageList) {
 	dst.ID = src.ID
-	dst.Title = ""
+	dst.Title = message.Title
+	dst.Types = src.Types
+	dst.Content = message.Content
 	dst.CreatedAt = src.CreatedAt
 	dst.ReadStatus = src.ReadStatus
+	dst.Files = message.Files
 }

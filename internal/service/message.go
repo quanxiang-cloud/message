@@ -165,20 +165,20 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 		return nil, err
 	}
 	// 不需要发送， 直接return
-
+	tx.Commit()
 	if !web.IsSend {
-		tx.Commit()
+
 		return &CreateMessageResp{
 			ID: messages.ID,
 		}, nil
 	}
-	m.webSend(ctx, tx, web, messages.ID, convertContent)
+	m.webSend(ctx, web, messages.ID, convertContent)
 	return &CreateMessageResp{
 		ID: messages.ID,
 	}, nil
 }
 
-func (m *message) webSend(ctx context.Context, db *gorm.DB, webData *web, messageID, convertContent string) error {
+func (m *message) webSend(ctx context.Context, webData *web, messageID, convertContent string) error {
 	var failCount, totalCount int
 	for _, value := range webData.Receivers {
 		if value.Type == models.Department {
@@ -191,25 +191,28 @@ func (m *message) webSend(ctx context.Context, db *gorm.DB, webData *web, messag
 				record := &models.Record{
 					ID:           id2.GenID(),
 					ListID:       messageID,
+					Types:        webData.Types,
 					ReceiverID:   u.ID,
 					ReceiverName: u.UserName,
 					CreatedAt:    time2.NowUnix(),
 				}
-				err = m.recordCreateAndSend(ctx, db, record, convertContent)
+				err = m.recordCreateAndSend(ctx, record, convertContent)
 				if err != nil {
 					m.log.Error(err, " dep recordCreateAndSend error", "Request-ID", logger.STDRequestID(ctx))
 					failCount = failCount + 1
 				}
 			}
 		} else {
+			totalCount = totalCount + 1
 			record := &models.Record{
 				ID:           id2.GenID(),
+				Types:        webData.Types,
 				ListID:       messageID,
 				ReceiverID:   value.ID,
 				ReceiverName: value.Name,
 				CreatedAt:    time2.NowUnix(),
 			}
-			err := m.recordCreateAndSend(ctx, db, record, convertContent)
+			err := m.recordCreateAndSend(ctx, record, convertContent)
 			if err != nil {
 				m.log.Error(err, "user recordCreateAndSend error", "Request-ID", logger.STDRequestID(ctx))
 				failCount = failCount + 1
@@ -224,15 +227,15 @@ func (m *message) webSend(ctx context.Context, db *gorm.DB, webData *web, messag
 		Success: totalCount - failCount,
 		Status:  constant.AlreadySent,
 	}
-	err := m.messageRepo.UpdateCount(db, update)
+	err := m.messageRepo.UpdateCount(m.db, update)
 	if err != nil {
 		m.log.Error(err, "update message count error", "Request-ID", logger.STDRequestID(ctx))
 	}
 	return nil
 }
 
-func (m *message) recordCreateAndSend(ctx context.Context, db *gorm.DB, record *models.Record, content string) error {
-	err := m.recordRepo.Create(db, record)
+func (m *message) recordCreateAndSend(ctx context.Context, record *models.Record, content string) error {
+	err := m.recordRepo.Create(m.db, record)
 	if err != nil {
 		return err
 	}
@@ -346,10 +349,10 @@ type GetMesByIDResp struct {
 	Receivers models.Receivers      `json:"receivers"`
 	Content   string                `json:"content"`
 	Files     models.Files          `json:"files"`
-	CreatorID string                `json:"creator_id"`
+	CreatorID string                `json:"creatorId"`
 	Success   int                   `json:"success"`
 	Fail      int                   `json:"fail"`
-	SendNum   int                   `json:"send_num"`
+	SendNum   int                   `json:"sendNum"`
 }
 
 // GetMesByID by id
