@@ -76,6 +76,7 @@ func (m *Message) GetMessageByID(c *gin.Context) {
 	resp.Format(m.message.GetMesByID(logger.CTXTransfer(c), req)).Context(c)
 }
 
+// BatchMessage 批量发消息
 func (m *Message) BatchMessage(c *gin.Context) {
 	var batch []service.CreateMessageReq
 	if err := c.ShouldBind(&batch); err != nil {
@@ -84,7 +85,10 @@ func (m *Message) BatchMessage(c *gin.Context) {
 		return
 	}
 	for _, message := range batch {
-		_, _ = m.message.CreateMessage(c, &message)
+		_, err := m.message.CreateMessage(c, &message)
+		if err != nil {
+			m.log.Error(err, "send message ", "requestID", logger.GINRequestID(c))
+		}
 
 	}
 	resp.Format(struct{}{}, nil).Context(c)

@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"os"
 	template2 "text/template"
 
 	"github.com/quanxiang-cloud/message/internal/constant"
@@ -28,9 +30,15 @@ import (
 	"github.com/quanxiang-cloud/message/pkg/config"
 )
 
-const (
-	send = "http://message/api/v1/message/send"
-)
+var messageURL = "%s/api/v1/message/send"
+
+func init() {
+	jwtHost := os.Getenv("MESSAGE_HOST")
+	if jwtHost == "" {
+		jwtHost = "http://message"
+	}
+	messageURL = fmt.Sprintf(messageURL, jwtHost)
+}
 
 // Message message
 type Message interface {
@@ -252,7 +260,7 @@ func (m *message) recordCreateAndSend(ctx context.Context, record *models.Record
 
 func (m *message) Send(ctx context.Context, message *event.Data) error {
 
-	return client.POST(ctx, &m.client, "http://message/api/v1/message/send", message, nil)
+	return client.POST(ctx, &m.client, messageURL, message, nil)
 
 }
 
@@ -310,9 +318,13 @@ func (m *message) convertContent(content *content) (*convertMessage, error) {
 	if t == nil {
 		return nil, error2.NewError(code.ErrNotExistTemplate)
 	}
-	t2 := template2.New(t.Content)
+	t2, err := template2.New("").Parse(t.Content)
+	if err != nil {
+		return nil, err
+	}
 	buffer := new(bytes.Buffer)
 	err = t2.Execute(buffer, content.KeyAndValue)
+
 	if err != nil {
 		return nil, err
 	}
