@@ -15,16 +15,13 @@ internalNet:
 
 # -------------------- mysql --------------------  
 mysql:
-  host: 192.168.200.18:3306
-  db: message
-  user: root
-  password: uyWxtvt6gCOy3VPLB3rTpa0rQ
+  host:
+  db:
+  user:
+  password:
   log: true
 
 redis:
   addrs:
-    - 192.168.200.18:6379
-    - 192.168.200.19:6379
-    - 192.168.200.20:6379
   username:
   password:
