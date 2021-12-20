@@ -45,7 +45,7 @@ type MessageList struct {
 }
 
 // Files Files
-type Files []*Receiver
+type Files []*File
 
 // Receiver receiver 定义
 type Receiver struct {

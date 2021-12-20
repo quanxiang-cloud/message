@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/quanxiang-cloud/message/internal/constant"
 	"net/http"
 	template2 "text/template"
+
+	"github.com/quanxiang-cloud/message/internal/constant"
 
 	"git.internal.yunify.com/qxp/misc/header2"
 	"github.com/quanxiang-cloud/message/pkg/component/event"
@@ -79,14 +80,14 @@ type CreateMessageReq struct {
 
 type data struct {
 	Letter *letter `json:"letter"`
-	Email  *email  `json:"sms"`
+	Email  *email  `json:"email"`
 	Web    *web    `json:"web"`
 }
 
 type letter struct {
 	ID      string   `json:"id,omitempty"`
 	UUID    []string `json:"uuid,omitempty"`
-	Content *content `json:"contents"`
+	Content []byte   `json:"contents"`
 }
 
 type web struct {
@@ -100,7 +101,7 @@ type web struct {
 }
 
 type email struct {
-	To          []string `json:"To"`
+	To          []string `json:"to"`
 	Title       string   `json:"title"`
 	Content     *content `json:"contents"`
 	ContentType string   `json:"content_type,omitempty"`
@@ -138,6 +139,7 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 	if web.ID != "" {
 		err = m.messageRepo.Delete(tx, web.ID)
 		if err != nil {
+			tx.Rollback()
 			return nil, err
 		}
 	}
@@ -156,29 +158,27 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 		Receivers:   web.Receivers,
 		CreatedAt:   time2.NowUnix(),
 		Files:       web.Files,
-		Content:     convertContent,
+		Content:     convertContent.content,
 	}
 	err = m.messageRepo.Create(tx, messages)
-
 	if err != nil {
 		tx.Rollback()
 		return nil, err
 	}
 	// 不需要发送， 直接return
-
+	tx.Commit()
 	if !web.IsSend {
-		tx.Commit()
 		return &CreateMessageResp{
 			ID: messages.ID,
 		}, nil
 	}
-	m.webSend(ctx, tx, web, messages.ID, convertContent)
+	m.webSend(ctx, web, messages.ID, convertContent.content)
 	return &CreateMessageResp{
 		ID: messages.ID,
 	}, nil
 }
 
-func (m *message) webSend(ctx context.Context, db *gorm.DB, webData *web, messageID, convertContent string) error {
+func (m *message) webSend(ctx context.Context, webData *web, messageID, convertContent string) error {
 	var failCount, totalCount int
 	for _, value := range webData.Receivers {
 		if value.Type == models.Department {
@@ -191,25 +191,30 @@ func (m *message) webSend(ctx context.Context, db *gorm.DB, webData *web, messag
 				record := &models.Record{
 					ID:           id2.GenID(),
 					ListID:       messageID,
+					ReadStatus:   constant.NotRead,
+					Types:        webData.Types,
 					ReceiverID:   u.ID,
 					ReceiverName: u.UserName,
 					CreatedAt:    time2.NowUnix(),
 				}
-				err = m.recordCreateAndSend(ctx, db, record, convertContent)
+				err = m.recordCreateAndSend(ctx, record, convertContent)
 				if err != nil {
 					m.log.Error(err, " dep recordCreateAndSend error", "Request-ID", logger.STDRequestID(ctx))
 					failCount = failCount + 1
 				}
 			}
 		} else {
+			totalCount = totalCount + 1
 			record := &models.Record{
 				ID:           id2.GenID(),
+				Types:        webData.Types,
 				ListID:       messageID,
+				ReadStatus:   constant.NotRead,
 				ReceiverID:   value.ID,
 				ReceiverName: value.Name,
 				CreatedAt:    time2.NowUnix(),
 			}
-			err := m.recordCreateAndSend(ctx, db, record, convertContent)
+			err := m.recordCreateAndSend(ctx, record, convertContent)
 			if err != nil {
 				m.log.Error(err, "user recordCreateAndSend error", "Request-ID", logger.STDRequestID(ctx))
 				failCount = failCount + 1
@@ -224,15 +229,15 @@ func (m *message) webSend(ctx context.Context, db *gorm.DB, webData *web, messag
 		Success: totalCount - failCount,
 		Status:  constant.AlreadySent,
 	}
-	err := m.messageRepo.UpdateCount(db, update)
+	err := m.messageRepo.UpdateCount(m.db, update)
 	if err != nil {
 		m.log.Error(err, "update message count error", "Request-ID", logger.STDRequestID(ctx))
 	}
 	return nil
 }
 
-func (m *message) recordCreateAndSend(ctx context.Context, db *gorm.DB, record *models.Record, content string) error {
-	err := m.recordRepo.Create(db, record)
+func (m *message) recordCreateAndSend(ctx context.Context, record *models.Record, content string) error {
+	err := m.recordRepo.Create(m.db, record)
 	if err != nil {
 		return err
 	}
@@ -252,18 +257,13 @@ func (m *message) Send(ctx context.Context, message *event.Data) error {
 }
 
 func (m *message) createLetter(ctx context.Context, letter *letter) (*CreateMessageResp, error) {
-	convertContent, err := m.convertContent(letter.Content)
-	if err != nil {
-		return nil, err
-	}
-	contentByte, _ := json.Marshal(convertContent)
 	message := new(event.Data)
 	message.LetterSpec = &event.LetterSpec{
 		ID:      letter.ID,
 		UUID:    letter.UUID,
-		Content: contentByte,
+		Content: letter.Content,
 	}
-	err = m.Send(ctx, message)
+	err := m.Send(ctx, message)
 	if err != nil {
 		return nil, err
 	}
@@ -276,11 +276,14 @@ func (m *message) createEmail(ctx context.Context, email *email) (*CreateMessage
 		return nil, err
 	}
 	message := new(event.Data)
+	if email.Title == "" {
+		email.Title = convertContent.title
+	}
 	message.EmailSpec = &event.EmailSpec{
 		To:          email.To,
 		Title:       email.Title,
 		ContentType: email.ContentType,
-		Content:     convertContent,
+		Content:     convertContent.content,
 	}
 	err = m.Send(ctx, message)
 	if err != nil {
@@ -289,21 +292,34 @@ func (m *message) createEmail(ctx context.Context, email *email) (*CreateMessage
 	return &CreateMessageResp{}, nil
 }
 
-func (m *message) convertContent(content *content) (string, error) {
+type convertMessage struct {
+	content string
+	title   string
+}
+
+func (m *message) convertContent(content *content) (*convertMessage, error) {
 	if content.Content != "" {
-		return content.Content, nil
+		return &convertMessage{
+			content: content.Content,
+		}, nil
 	}
 	t, err := m.templateRepo.Get(m.db, content.TemplateID)
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+	if t == nil {
+		return nil, error2.NewError(code.ErrNotExistTemplate)
 	}
 	t2 := template2.New(t.Content)
 	buffer := new(bytes.Buffer)
 	err = t2.Execute(buffer, content.KeyAndValue)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return buffer.String(), nil
+	return &convertMessage{
+		content: buffer.String(),
+		title:   t.Title,
+	}, nil
 }
 
 // DeleteMessageReq req
@@ -340,16 +356,16 @@ type GetMesByIDReq struct {
 
 // GetMesByIDResp by id resp
 type GetMesByIDResp struct {
-	ID        string                `json:"id"`
-	Title     string                `json:"title"`
-	Types     constant.MessageTypes `json:"types"`
-	Receivers models.Receivers      `json:"receivers"`
-	Content   string                `json:"content"`
-	Files     models.Files          `json:"files"`
-	CreatorID string                `json:"creator_id"`
-	Success   int                   `json:"success"`
-	Fail      int                   `json:"fail"`
-	SendNum   int                   `json:"send_num"`
+	ID          string                `json:"id"`
+	Title       string                `json:"title"`
+	Types       constant.MessageTypes `json:"types"`
+	Receivers   models.Receivers      `json:"receivers"`
+	Content     string                `json:"content"`
+	Files       models.Files          `json:"files"`
+	CreatorName string                `json:"creatorName"`
+	Success     int                   `json:"success"`
+	Fail        int                   `json:"fail"`
+	SendNum     int                   `json:"sendNum"`
 }
 
 // GetMesByID by id
@@ -359,15 +375,16 @@ func (m *message) GetMesByID(ctx context.Context, req *GetMesByIDReq) (resp *Get
 		return
 	}
 	resp = &GetMesByIDResp{
-		ID:        ms.ID,
-		Title:     ms.Title,
-		Types:     ms.Types,
-		Receivers: ms.Receivers,
-		Content:   ms.Content,
-		Files:     ms.Files,
-		Success:   ms.Success,
-		Fail:      ms.Fail,
-		SendNum:   ms.SendNum,
+		ID:          ms.ID,
+		Title:       ms.Title,
+		CreatorName: ms.CreatorName,
+		Types:       ms.Types,
+		Receivers:   ms.Receivers,
+		Content:     ms.Content,
+		Files:       ms.Files,
+		Success:     ms.Success,
+		Fail:        ms.Fail,
+		SendNum:     ms.SendNum,
 	}
 	return
 }
@@ -389,15 +406,16 @@ type ListResp struct {
 
 // MesVO vo
 type MesVO struct {
-	ID          string                `json:"id"`
-	Types       constant.MessageTypes `json:"types"`
-	Title       string                `json:"title"`
-	CreatorName string                `json:"createdName"`
-	CreatedAt   int64                 `json:"createdAt"`
-	SendNum     int                   `json:"sendNum"`
-	Success     int                   `json:"success"`
-	Fail        int                   `json:"fail"`
-	Files       models.Files          `json:"files"`
+	ID          string                 `json:"id"`
+	Types       constant.MessageTypes  `json:"types"`
+	Title       string                 `json:"title"`
+	CreatorName string                 `json:"createdName"`
+	CreatedAt   int64                  `json:"createdAt"`
+	SendNum     int                    `json:"sendNum"`
+	Success     int                    `json:"success"`
+	Fail        int                    `json:"fail"`
+	Files       models.Files           `json:"files"`
+	Status      constant.MessageStatus `json:"status"`
 }
 
 // MessageList   get message_list by condition
@@ -425,4 +443,6 @@ func cloneMs(dst *MesVO, src *models.MessageList) {
 	dst.Success = src.Success
 	dst.Fail = src.Fail
 	dst.Files = src.Files
+	dst.Types = src.Types
+	dst.Status = src.Status
 }

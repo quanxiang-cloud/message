@@ -4,12 +4,13 @@ import (
 	"git.internal.yunify.com/qxp/misc/header2"
 	"git.internal.yunify.com/qxp/misc/logger"
 
+	"net/http"
+
 	"git.internal.yunify.com/qxp/misc/resp"
 	"github.com/gin-gonic/gin"
 	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/internal/service"
 	"github.com/quanxiang-cloud/message/pkg/config"
-	"net/http"
 )
 
 // Message 消息
@@ -73,4 +74,19 @@ func (m *Message) GetMessageByID(c *gin.Context) {
 		return
 	}
 	resp.Format(m.message.GetMesByID(logger.CTXTransfer(c), req)).Context(c)
+}
+
+func (m *Message) BatchMessage(c *gin.Context) {
+	var batch []service.CreateMessageReq
+	if err := c.ShouldBind(&batch); err != nil {
+		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c))
+		resp.Format(nil, err).Context(c, http.StatusBadRequest)
+		return
+	}
+	for _, message := range batch {
+		_, _ = m.message.CreateMessage(c, &message)
+
+	}
+	resp.Format(struct{}{}, nil).Context(c)
+
 }

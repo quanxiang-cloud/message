@@ -42,11 +42,9 @@ type RecordRepo interface {
 
 	ReadByIDs(*gorm.DB, []string) error
 
-	List(*gorm.DB, int8, int8, int, int, string) ([]*Record, int64, error)
+	List(*gorm.DB, int, int, int, int, string) ([]*Record, int64, error)
 
 	ReadByID(*gorm.DB, string) error
-
-	UpdateStatus(*gorm.DB, string, constant.ReadStatus) error
 
 	GetByCondition(*gorm.DB, string, string) (*Record, error)
 }

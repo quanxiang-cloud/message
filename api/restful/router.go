@@ -86,6 +86,7 @@ func createMessageRouter(v1 *gin.RouterGroup, c *config.Config, log logr.Logger)
 	k := v1.Group("/manager")
 	{
 		k.POST("/create", message.SaveMessage)
+		k.POST("/create/batch", message.BatchMessage)
 		k.POST("/delete", message.DeleteMessage)
 		k.POST("/getMesByID", message.GetMessageByID)
 		k.POST("/getMesList", message.MessageList)
