@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/quanxiang-cloud/message/pkg/component"
-	"github.com/quanxiang-cloud/message/pkg/component/letter"
+	"github.com/quanxiang-cloud/message/pkg/component/email"
 	"go.uber.org/zap"
 )
 
@@ -18,11 +18,10 @@ var (
 )
 
 func main() {
-	var host string
 	var port string
 
-	flag.StringVar(&host, "message-server", "", "message server host")
 	flag.StringVar(&port, "port", ":80", "")
+	email.Prepare()
 	flag.Parse()
 
 	zapLog, err := zap.NewDevelopment()
@@ -32,7 +31,7 @@ func main() {
 	log = zapr.NewLogger(zapLog)
 
 	ctx := context.Background()
-	sender, err := letter.New(ctx, host, log)
+	sender, err := email.New(ctx, log)
 	if err != nil {
 		log.Error(err, "new sender")
 		panic(err)

@@ -4,10 +4,14 @@ metadata:
   name: message-manager-dapr
 spec:
   ports:
-    - name: web
+    - name: inner
       protocol: TCP
       port: 80
       targetPort: 80
+    - name: web
+      protocol: TCP
+      port: 8080
+      targetPort: 40001
   selector:
     app: message-dapr
   type: ClusterIP
@@ -38,6 +42,13 @@ spec:
             name: message-dapr
             defaultMode: 420
       containers:
+        - name: auth
+          image: dockerhub.qingcloud.com/lowcode/auth:alpha1
+          ports:
+          - name: auth-web
+            containerPort: 40001
+            protocol: TCP
+          imagePullPolicy: Always
         - name: message
           image: dockerhub.qingcloud.com/lowcode/message:alpha1
           args:
@@ -48,12 +59,11 @@ spec:
             - name: web
               containerPort: 80
               protocol: TCP
-          resources: {}
           volumeMounts:
             - name: configmap
               readOnly: true
               mountPath: /configs
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
       restartPolicy: Always
       imagePullSecrets:
         - name: docker

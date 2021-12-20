@@ -1,4 +1,4 @@
-package dapr
+package event
 
 import "errors"
 
@@ -25,7 +25,12 @@ type LetterSpec struct {
 	Content []byte   `json:"content,omitempty"`
 }
 
-type EmailSpec struct{}
+type EmailSpec struct {
+	To          []string `json:"to,omitempty"`
+	Title       string   `json:"title,omitempty"`
+	ContentType string   `json:"content_type,omitempty"`
+	Content     string   `json:"content,omitempty"`
+}
 
 var (
 	ErrDataIsNil = errors.New("data is nil")

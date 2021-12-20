@@ -5,44 +5,28 @@ import (
 	"encoding/json"
 	"net/http"
 
-	ct "git.internal.yunify.com/qxp/misc/client"
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
 	"github.com/gorilla/websocket"
-	"github.com/quanxiang-cloud/message/package/config"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
-	client "github.com/quanxiang-cloud/message/pkg/quanxiang"
+	"github.com/quanxiang-cloud/message/pkg/config"
 )
 
 type Websocket struct {
 	manager *wm.Manager
-
-	warden client.Warden
+	log     logr.Logger
 }
 
-func NewWebsocket(ctx context.Context, conf *config.Config, manager *wm.Manager) (*Websocket, error) {
+func NewWebsocket(ctx context.Context, conf *config.Config, manager *wm.Manager, log logr.Logger) (*Websocket, error) {
 	return &Websocket{
 		manager: manager,
-		warden: client.NewOWarden(ct.Config{
-			Timeout:      conf.InternalNet.Timeout,
-			MaxIdleConns: conf.InternalNet.MaxIdleConns,
-		}),
+		log:     log.WithName("websocket"),
 	}, nil
 }
 
 //Handler Handler
 func (w *Websocket) Handler(c *gin.Context) {
-	token := c.Query("token")
-	if token == "" {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
 	ctx := context.Background()
-
-	profile, err := w.warden.CheckToken(ctx, token, config.Conf.AUth.CheckToken)
-	if err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
 
 	wsConn, err := (&websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}).Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -50,10 +34,12 @@ func (w *Websocket) Handler(c *gin.Context) {
 		return
 	}
 
-	client, err := w.manager.Register(ctx, profile.UserID, wsConn)
+	id := c.Request.Header.Get("Id")
+	client, err := w.manager.Register(ctx, id, wsConn)
 	if err != nil {
 		w.manager.UnRegister(ctx, client)
 		c.AbortWithError(http.StatusInternalServerError, err)
+		w.log.Error(err, "register")
 		return
 	}
 
@@ -65,16 +51,19 @@ func (w *Websocket) Handler(c *gin.Context) {
 	if err != nil {
 		w.manager.UnRegister(ctx, client)
 		c.AbortWithError(http.StatusInternalServerError, err)
+		w.log.Error(err, "json marshal")
 		return
 	}
 
 	_, err = w.manager.Send(ctx, &wm.SendReq{
-		ID:      profile.UserID,
+		ID:      id,
+		UUID:    []string{client.GetUUID()},
 		Content: pong,
 	})
 	if err != nil {
 		w.manager.UnRegister(ctx, client)
 		c.AbortWithError(http.StatusInternalServerError, err)
+		w.log.Error(err, "send first message")
 		return
 	}
 }

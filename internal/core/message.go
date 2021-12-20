@@ -3,10 +3,10 @@ package core
 import (
 	"context"
 	"fmt"
-	"log"
 
 	daprd "github.com/dapr/go-sdk/client"
-	"github.com/quanxiang-cloud/message/pkg/component/dapr"
+	"github.com/go-logr/logr"
+	"github.com/quanxiang-cloud/message/pkg/component/event"
 )
 
 //go:generate stringer -type Channel
@@ -19,25 +19,27 @@ const (
 )
 
 type Message struct {
-	dapr.Data `json:",omitempty"`
+	event.Data `json:",omitempty"`
 }
 
 type SendResp struct{}
 
 type Bus struct {
 	daprClient daprd.Client
+	log        logr.Logger
 
 	pubsubName string
 	tenant     string
 }
 
-func New(ctx context.Context, opts ...Option) (*Bus, error) {
+func New(ctx context.Context, log logr.Logger, opts ...Option) (*Bus, error) {
 	client, err := daprd.NewClient()
 	if err != nil {
 		return nil, err
 	}
 	bus := &Bus{
 		daprClient: client,
+		log:        log.WithName("bus"),
 	}
 
 	for _, fn := range opts {
@@ -63,15 +65,35 @@ func WithTenant(tenant string) Option {
 }
 
 func (b *Bus) Send(ctx context.Context, req *Message) (*SendResp, error) {
+	var topic string
+
 	if req.Data.LetterSpec != nil {
-		topic := fmt.Sprintf("%s.%s", b.tenant, Letter.String())
-		log.Printf("send letter,topic: [%s]", topic)
-		if err := b.daprClient.PublishEvent(context.Background(), b.pubsubName, topic, req.Data); err != nil {
+		topic = fmt.Sprintf("%s.%s", b.tenant, Letter.String())
+		if err := b.publish(ctx, topic, req.Data); err != nil {
+			b.log.Error(err, "push letter", "userID", req.ID)
 			return &SendResp{}, err
 		}
 	}
 
+	if req.Data.EmailSpec != nil {
+		topic = fmt.Sprintf("%s.%s", b.tenant, Email.String())
+		if err := b.publish(ctx, topic, req.Data); err != nil {
+			b.log.Error(err, "push email", "title", req.EmailSpec.Title)
+			return &SendResp{}, err
+		}
+	}
+
+	b.log.Info("publish success")
 	return &SendResp{}, nil
+}
+
+func (b *Bus) publish(ctx context.Context, topic string, data interface{}) error {
+	b.log.Info("send message", "topic", topic)
+	if err := b.daprClient.PublishEvent(context.Background(), b.pubsubName, topic, data); err != nil {
+		b.log.Error(err, "publishEvent", "topic", topic, "pubsubName", b.pubsubName)
+		return err
+	}
+	return nil
 }
 
 func (b *Bus) Close() error {

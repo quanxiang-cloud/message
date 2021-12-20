@@ -1,0 +1,55 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: message-email-dapr
+spec:
+  ports:
+    - name: web
+      protocol: TCP
+      port: 80
+      targetPort: 80
+  selector:
+    app: email-dapr
+  type: ClusterIP
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: email-dapr
+  namespace: lowcode
+  labels:
+    app: email-dapr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: email-dapr
+  template:
+    metadata:
+      labels:
+        app: email-dapr
+      annotations:
+        dapr.io/app-id: message-email
+        dapr.io/app-port: '80'
+        dapr.io/enabled: 'true'
+    spec:
+      containers:
+        - name: email
+          image: dockerhub.qingcloud.com/lowcode/email:alpha1
+          args:
+            - '--port=:80'
+            - '--email-host=<<HOST>>'
+            - '--email-port=<<PORT>>'
+            - '--email-username=<<USERNAME>>'
+            - '--email-password=<<PASSWORD>>'
+            - '--email-alias=<<ALIAS>>'
+            - '--email-sender=<<EMAIL>>'
+          ports:
+            - name: web
+              containerPort: 80
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: <<SECRET>>
+      affinity: {}

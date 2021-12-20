@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: message-dapr
+spec:
+  template:
+    metadata:
+      labels: {}
+data:
+  config.yml: |
+    # port 端口
+    # e.g :80
+    port: :80
+
+    # model 模式 debug|release
+    # debug模式，可以输出更加详细的日志，但是运行速度会减慢
+    model: debug
+
+    #  -------------------- internalNet --------------------
+    internalNet:
+      timeout: 20
+      maxIdleConns: 10
+
+    # -------------------- mysql --------------------  
+    mysql: 
+      host: mysql:3306
+      db: message
+      user: root
+      password:
+      log: true
+
+    redis:
+      addrs:
+      - redis:6379
+      username:
+      password:

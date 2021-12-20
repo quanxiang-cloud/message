@@ -3,16 +3,25 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"time"
 
-	"git.internal.yunify.com/qxp/misc/logger"
+	"github.com/go-logr/logr"
+	"github.com/go-logr/zapr"
 	"github.com/quanxiang-cloud/message/api/restful"
 	"github.com/quanxiang-cloud/message/internal/core"
 	"github.com/quanxiang-cloud/message/internal/service"
-	"github.com/quanxiang-cloud/message/package/config"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
+	"github.com/quanxiang-cloud/message/pkg/config"
+	"go.uber.org/zap"
+)
+
+var (
+	log logr.Logger
 )
 
 func main() {
+	time.Sleep(time.Second * 5)
 	var pubsubName string
 	var tenant string
 	var configPath string
@@ -22,37 +31,43 @@ func main() {
 	flag.StringVar(&configPath, "config", "/configs/config.yml", "config file path")
 	flag.Parse()
 
+	zapLog, err := zap.NewDevelopment()
+	if err != nil {
+		panic(fmt.Sprintf("who watches the watchmen (%v)?", err))
+	}
+	log = zapr.NewLogger(zapLog)
+
 	conf, err := config.NewConfig(configPath)
 	if err != nil {
-		panic(err)
-	}
-
-	err = logger.New(&conf.Log)
-	if err != nil {
+		log.Error(err, "get config")
 		panic(err)
 	}
 
 	ctx := context.Background()
 
-	bus, err := core.New(ctx,
+	bus, err := core.New(ctx, log,
 		core.WithPubsubName(pubsubName),
 		core.WithTenant(tenant),
 	)
 	if err != nil {
+		log.Error(err, "new bus")
 		panic(err)
 	}
 
-	cz, err := service.NewCacheZone(ctx, conf)
+	cz, err := service.NewCacheZone(ctx, conf, log)
 	if err != nil {
+		log.Error(err, "new cache zone")
 		panic(err)
 	}
 
-	manager, err := wm.NewManager(ctx, cz)
+	manager, err := wm.NewManager(ctx, cz, log)
 	if err != nil {
+		log.Error(err, "new manager")
 		panic(err)
 	}
-	ws, err := restful.NewWebsocket(ctx, conf, manager)
+	ws, err := restful.NewWebsocket(ctx, conf, manager, log)
 	if err != nil {
+		log.Error(err, "new webSocket")
 		panic(err)
 	}
 
@@ -60,7 +75,7 @@ func main() {
 		restful.WithBus(bus),
 		restful.WithWebSocket(ctx, ws),
 		restful.WithSender(cz, manager),
-	})
+	}, log)
 
 	if err != nil {
 		panic(err)

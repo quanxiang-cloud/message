@@ -2,11 +2,11 @@ package websocket
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/go-logr/logr"
 	"github.com/gorilla/websocket"
 )
 
@@ -14,12 +14,14 @@ type Manager struct {
 	sync.RWMutex
 	pool   map[string][]*Connect
 	affair Affair
+	log    logr.Logger
 }
 
-func NewManager(ctx context.Context, affair Affair) (*Manager, error) {
+func NewManager(ctx context.Context, affair Affair, log logr.Logger) (*Manager, error) {
 	return &Manager{
 		pool:   make(map[string][]*Connect),
 		affair: affair,
+		log:    log.WithName("manager"),
 	}, nil
 }
 
@@ -37,7 +39,7 @@ func (m *Manager) Register(ctx context.Context, id string, ws *websocket.Conn) (
 	ws.SetCloseHandler(func(code int, text string) error {
 		cacel()
 		m.UnRegister(ctx, conn)
-		fmt.Println("UnRegister....")
+		m.log.Info("UnRegister", "id", id, "uuid", conn.GetUUID())
 		return nil
 	})
 
@@ -57,17 +59,25 @@ func (m *Manager) Register(ctx context.Context, id string, ws *websocket.Conn) (
 
 	err := m.affair.Create(ctx, CopyFromConnect(conn))
 
-	m.read(ctx, *conn)
+	m.read(ctx, conn)
+
+	m.log.Info("Register", "id", id, "uuid", conn.GetUUID())
 	return conn, err
 }
 
-func (m *Manager) read(ctx context.Context, conn Connect) {
-	go func(ctx context.Context, conn Connect) {
+func (m *Manager) read(ctx context.Context, conn *Connect) {
+	go func(ctx context.Context, conn *Connect) {
 		rc := conn.Read()
 		for {
 			select {
 			case _, ok := <-rc:
 				if !ok {
+					return
+				}
+				// just renewal
+				err := m.affair.Renewal(ctx, CopyFromConnect(conn))
+				if err != nil {
+					conn.socket.Close()
 					return
 				}
 			case <-ctx.Done():
@@ -84,7 +94,7 @@ func (m *Manager) UnRegister(ctx context.Context, conn *Connect) error {
 
 	conns := m.getConns(id)
 	for i, elem := range conns {
-		if elem.uuid == conn.id {
+		if elem.uuid == conn.uuid {
 			conns = append(conns[:i], conns[i+1:]...)
 			break
 		}
@@ -111,8 +121,10 @@ func (m *Manager) Send(ctx context.Context, req *SendReq) (*SendResp, error) {
 	conns := m.getConns(req.ID, req.UUID...)
 	for _, conn := range conns {
 		err := conn.Write(websocket.TextMessage, req.Content)
-		// FIXME
-		_ = err
+		if err != nil && err != websocket.ErrCloseSent {
+			m.log.Error(err, "write message", "id", conn.id, "uuid", conn.uuid)
+			_ = conn.socket.Close()
+		}
 	}
 	return &SendResp{}, nil
 }

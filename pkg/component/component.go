@@ -8,11 +8,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/quanxiang-cloud/message/pkg/component/dapr"
+	"github.com/quanxiang-cloud/message/pkg/component/event"
 )
 
 type Sender interface {
-	Scaffold(context.Context, dapr.Data) error
+	Scaffold(context.Context, event.Data) error
 }
 
 type Component struct {
@@ -42,7 +42,7 @@ func (c *Component) init(ctx context.Context, sender Sender) {
 			return
 		}
 
-		event := new(dapr.DaprEvent)
+		event := new(event.DaprEvent)
 		err = json.Unmarshal(body, event)
 		if err != nil {
 			errHandle(ctx, err)

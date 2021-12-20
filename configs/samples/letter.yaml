@@ -34,8 +34,8 @@ spec:
         dapr.io/enabled: 'true'
     spec:
       containers:
-        - name: container-gxic5a
-          image: 'dockerhub.qingcloud.com/lowcode/letter:alpha1'
+        - name: letter
+          image: dockerhub.qingcloud.com/lowcode/letter:alpha1
           args:
             - '--port=:80'
             - '--message-server=http://message-manager-dapr'

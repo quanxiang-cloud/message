@@ -8,31 +8,42 @@ import (
 	"net/http"
 	"time"
 
-	"git.internal.yunify.com/qxp/misc/logger"
 	"git.internal.yunify.com/qxp/misc/redis2"
+	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"github.com/quanxiang-cloud/message/internal/models/redis"
-	"github.com/quanxiang-cloud/message/package/config"
 	"github.com/quanxiang-cloud/message/pkg/client"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"
+	"github.com/quanxiang-cloud/message/pkg/config"
 )
 
-type CacheZone struct {
-	ip    string
-	cache models.WSConnetRepo
+var writerURL = "http://%s/api/v1/message/write"
 
+type CacheZone struct {
+	ip string
+
+	cache  models.WSConnetRepo
+	log    logr.Logger
 	client http.Client
 }
 
-func NewCacheZone(ctx context.Context, conf *config.Config) (*CacheZone, error) {
+func NewCacheZone(ctx context.Context, conf *config.Config, log logr.Logger) (*CacheZone, error) {
+	log = log.WithName("cacheZone")
+
 	redisClient, err := redis2.NewClient(conf.Redis)
 	if err != nil {
+		log.Error(err, "new redis client")
 		return nil, err
+	}
+
+	if conf.Loopback {
+		writerURL = fmt.Sprintf(writerURL, "%s"+conf.Port)
 	}
 
 	c := &CacheZone{
 		cache:  redis.NewWSConnectRepo(redisClient),
 		client: client.New(conf.InternalNet),
+		log:    log,
 	}
 
 	err = c.setLocalIP()
@@ -47,6 +58,7 @@ func (c *CacheZone) setLocalIP() error {
 	addrs, err := net.InterfaceAddrs()
 
 	if err != nil {
+		c.log.Error(err, "get net addrs")
 		return err
 	}
 
@@ -71,6 +83,7 @@ func (c *CacheZone) Create(ctx context.Context, obj wm.Object) error {
 		CreatedAt: obj.Time.Unix(),
 	})
 	if err != nil {
+		c.log.Error(err, "create", "id", obj.ID, "uuid", obj.UUID)
 		return err
 	}
 
@@ -78,11 +91,19 @@ func (c *CacheZone) Create(ctx context.Context, obj wm.Object) error {
 	return err
 }
 func (c *CacheZone) Renewal(ctx context.Context, obj wm.Object) error {
-	return c.Create(ctx, obj)
+	err := c.Create(ctx, obj)
+	if err != nil {
+		c.log.Error(err, "renewal", "id", obj.ID, "uuid", obj.UUID)
+	}
+	return err
 }
 
 func (c *CacheZone) Delete(ctx context.Context, obj wm.Object) error {
-	return c.cache.Delete(obj.ID, obj.UUID)
+	err := c.cache.Delete(obj.ID, obj.UUID)
+	if err != nil {
+		c.log.Error(err, "delete", "id", obj.ID, "uuid", obj.UUID)
+	}
+	return err
 }
 
 type PublishReq struct {
@@ -96,6 +117,7 @@ type PublishResp struct{}
 func (c *CacheZone) Publish(ctx context.Context, req *PublishReq) (*PublishResp, error) {
 	wsConns, err := c.cache.Get(req.UserID)
 	if err != nil {
+		c.log.Error(err, "publish", "id", req.UserID, "uuid", req.UUID)
 		return &PublishResp{}, err
 	}
 
@@ -106,7 +128,7 @@ func (c *CacheZone) Publish(ctx context.Context, req *PublishReq) (*PublishResp,
 			// 删除 redis 的key
 			err := c.cache.Delete(conn.UserID, conn.UUID)
 			if err != nil {
-				logger.Logger.Errorw(err.Error(), "message send delete fail", req.UserID, logger.STDRequestID(ctx))
+				c.log.Error(err, "cache delete", req.UserID, "uuid", req.UUID)
 			}
 			continue
 		}
@@ -121,10 +143,11 @@ func (c *CacheZone) Publish(ctx context.Context, req *PublishReq) (*PublishResp,
 			Content: req.Content,
 		}
 
-		err = client.POST(ctx, &c.client, fmt.Sprintf("http://%s/api/v1/message/write", conn.IP), req, nil)
+		url := fmt.Sprintf(writerURL, conn.IP)
+		err = client.POST(ctx, &c.client, url, req, nil)
 		if err != nil {
 			// 打印报错信息
-			logger.Logger.Errorw(err.Error(), "message send fail", req.ID, logger.STDRequestID(ctx))
+			c.log.Error(err, "message send fail", "userID", req.ID, "uuid", conn.UUID, "url", url)
 		}
 	}
 

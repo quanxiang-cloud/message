@@ -2,25 +2,11 @@
 # e.g :80
 port: :80
 
+loopback: false
+
 # model 模式 debug|release
 # debug模式，可以输出更加详细的日志，但是运行速度会减慢
 model: debug
-
-# 站内信发送地址
-messageAPI: http://%s:80
-
-#  -------------------- log --------------------
-# comply with zap log specification
-log:
-  level: -1
-  development: false
-  sampling:
-    initial: 100
-    thereafter: 100
-  outputPath:
-    - stderr
-  errorOutputPath:
-    - stderr
 
 #  -------------------- internalNet --------------------
 internalNet:
@@ -28,7 +14,7 @@ internalNet:
   maxIdleConns: 10
 
 # -------------------- mysql --------------------  
-mysql: 
+mysql:
   host: 192.168.200.18:3306
   db: message
   user: root
@@ -42,8 +28,3 @@ redis:
     - 192.168.200.20:6379
   username:
   password:
-
-
-#token验证
-auth:
-  checktoken: http://jwt/api/v1/jwt/check
