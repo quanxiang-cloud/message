@@ -50,7 +50,7 @@ func (m *recordRepo) GetNumber(db *gorm.DB, reciverID string) ([]*models.Result,
 
 // UpdateReadStatus 把某个人的消息，标记为已读
 func (m *recordRepo) UpdateReadStatus(db *gorm.DB, receiverID string) error {
-	return db.Table(m.TableName()).Where("status = 1  and receiver_id = ?", receiverID).Updates(map[string]interface{}{
+	return db.Table(m.TableName()).Where("receiver_id = ?", receiverID).Updates(map[string]interface{}{
 		"read_status": 2,
 	}).Error
 }

@@ -54,13 +54,14 @@ type CenterMsByIDReq struct {
 
 // CenterMsByIDResp resp
 type CenterMsByIDResp struct {
-	ID          string              `json:"id"`
-	Content     string              `json:"content"`
-	Title       string              `json:"title"`
-	CreatorName string              `json:"creatorName"`
-	ReadStatus  constant.ReadStatus `json:"readStatus"`
-	UpdatedAt   int64               `json:"updateAt"`
-	Files       models.Files        `json:"files"`
+	ID          string                `json:"id"`
+	Content     string                `json:"content"`
+	Title       string                `json:"title"`
+	CreatorName string                `json:"creatorName"`
+	ReadStatus  constant.ReadStatus   `json:"readStatus"`
+	UpdatedAt   int64                 `json:"updateAt"`
+	Files       models.Files          `json:"files"`
+	Types       constant.MessageTypes `json:"types"`
 }
 
 // CenterMsByID byID
@@ -89,6 +90,8 @@ func (ms *record) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*Cent
 		CreatorName: message.CreatorName,
 		UpdatedAt:   record.CreatedAt,
 		ReadStatus:  record.ReadStatus,
+		Content:     message.Content,
+		Types:       message.Types,
 		Files:       message.Files,
 	}
 	return resp, nil
