@@ -14,7 +14,7 @@ const (
 )
 
 // CodeTable 码表
-var CodeTable = map[int]string{
+var CodeTable = map[int64]string{
 	ErrDeleteMsState:    "该条消息不处于草稿阶段，不能删除",
 	ErrNotExistTemplate: "消息模板不存在",
 }
