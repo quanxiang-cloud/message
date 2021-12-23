@@ -11,6 +11,7 @@ const (
 	rangeReadURL = fileServer + "/rangRead"
 )
 
+// FileServerConfig FileServerConfig
 type FileServerConfig struct {
 	InternalNet Config
 	Host        string
