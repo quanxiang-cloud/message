@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	git.internal.yunify.com/qxp/misc v0.0.0-20211222120821-aade7ddbc0bb
+	github.com/allegro/bigcache/v3 v3.0.1
 	github.com/dapr/go-sdk v1.3.0
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-logr/logr v0.3.0

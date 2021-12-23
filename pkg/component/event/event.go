@@ -25,11 +25,17 @@ type LetterSpec struct {
 	Content []byte   `json:"content,omitempty"`
 }
 
+type Attachment struct {
+	Name string `json:"name,omitempty"`
+	Path string `json:"path,omitempty"`
+}
+
 type EmailSpec struct {
-	To          []string `json:"to,omitempty"`
-	Title       string   `json:"title,omitempty"`
-	ContentType string   `json:"content_type,omitempty"`
-	Content     string   `json:"content,omitempty"`
+	To          []string     `json:"to,omitempty"`
+	Title       string       `json:"title,omitempty"`
+	ContentType string       `json:"content_type,omitempty"`
+	Content     string       `json:"content,omitempty"`
+	Attachments []Attachment `json:"attachments,omitempty"`
 }
 
 var (
