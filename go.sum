@@ -37,8 +37,8 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 contrib.go.opencensus.io/exporter/prometheus v0.2.0/go.mod h1:TYmVAyE8Tn1lyPcltF5IYYfWp2KHu7lQGIZnj8iZMys=
 contrib.go.opencensus.io/exporter/zipkin v0.1.1/go.mod h1:GMvdSl3eJ2gapOaLKzTKE3qDgUkJ86k9k3yY2eqwkzc=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-git.internal.yunify.com/qxp/misc v0.0.0-20211201085933-afa612873ef1 h1:E3cEvY3hkeOiF9PoZh6Vsz6ISRZ3z9P0lyECbDO312E=
-git.internal.yunify.com/qxp/misc v0.0.0-20211201085933-afa612873ef1/go.mod h1:W42omH0agqE7vK5zcw3DO/h0pXoRqGqeTYzAf+TM27o=
+git.internal.yunify.com/qxp/misc v0.0.0-20211222120821-aade7ddbc0bb h1:mKcFpzC3kFlhZW0zWV3jVmcLCZYAOXmGHT19vAG81wY=
+git.internal.yunify.com/qxp/misc v0.0.0-20211222120821-aade7ddbc0bb/go.mod h1:W42omH0agqE7vK5zcw3DO/h0pXoRqGqeTYzAf+TM27o=
 github.com/AdhityaRamadhanus/fasthttpcors v0.0.0-20170121111917-d4c07198763a/go.mod h1:C0A1KeiVHs+trY6gUTPhhGammbrZ30ZfXRW/nuT7HLw=
 github.com/Azure/azure-amqp-common-go/v3 v3.0.1/go.mod h1:PBIGdzcO1teYoufTKMcGibdKaYZv4avS+O6LNIp8bq0=
 github.com/Azure/azure-amqp-common-go/v3 v3.1.0/go.mod h1:PBIGdzcO1teYoufTKMcGibdKaYZv4avS+O6LNIp8bq0=
