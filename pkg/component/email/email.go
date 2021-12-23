@@ -29,6 +29,12 @@ var (
 	alias string
 	// sender sender email.
 	sender string
+	// fileServerHost file server's host
+	fileServerHost string
+	// timeout Client connection timeout, the unit is in seconds
+	timeout int
+	// maxIdleConnections Maximum number of idle remote connections
+	maxIdleConnections int
 )
 
 // Prepare Prepare
@@ -40,6 +46,9 @@ func Prepare() {
 	flag.StringVar(&password, "email-password", "", "the password to use to authenticate to the SMTP server")
 	flag.StringVar(&alias, "email-alias", "", "sender alias name")
 	flag.StringVar(&sender, "email-sender", "", "ender email")
+	flag.StringVar(&fileServerHost, "file-server-host", "http://fileserver", "file-server-host")
+	flag.IntVar(&timeout, "client-timeout", 20, "client connection timeout, the unit is in seconds")
+	flag.IntVar(&maxIdleConnections, "client-max-idle", 10, "maximum number of idle remote connections")
 }
 
 // New New
@@ -52,9 +61,12 @@ func New(ctx context.Context, log logr.Logger) (*Email, error) {
 		dialer:      gomail.NewDialer(host, port, username, password),
 		log:         log.WithName("email"),
 		attachCache: attachCache,
-		fileServer: client.NewFileServer(client.Config{
-			Timeout:      20 * time.Second,
-			MaxIdleConns: 10,
+		fileServer: client.NewFileServer(client.FileServerConfig{
+			InternalNet: client.Config{
+				Timeout:      time.Duration(timeout) * time.Second,
+				MaxIdleConns: maxIdleConnections,
+			},
+			Host: fileServerHost,
 		}),
 	}, nil
 }
@@ -106,12 +118,18 @@ func (e *Email) Send(ctx context.Context, data *event.EmailSpec) error {
 func (e *Email) getAttachment(ctx context.Context, path string) ([]byte, error) {
 	content, err := e.attachCache.Get(path)
 	if err != nil {
-		fileResp, err := e.fileServer.RangRead(ctx, path, minioFileServer, 0, 0)
+		fileResp, err := e.fileServer.RangRead(ctx, &client.RangReadReq{
+			Path: path,
+			Opt:  minioFileServer,
+		})
 		if err != nil {
 			return nil, err
 		}
 		content = fileResp.Content
-		_ = e.attachCache.Push(path, content)
+		err = e.attachCache.Push(path, content)
+		if err != nil {
+			e.log.Error(err, "Cache invalidation")
+		}
 	}
 	return content, nil
 }

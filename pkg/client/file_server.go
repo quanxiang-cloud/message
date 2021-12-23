@@ -7,23 +7,30 @@ import (
 )
 
 const (
-	fileServer   = "http://fileserver/api/v1/fileserver"
+	fileServer   = "/api/v1/fileserver"
 	rangeReadURL = fileServer + "/rangRead"
 )
 
+type FileServerConfig struct {
+	InternalNet Config
+	Host        string
+}
+
 // FileServerAPI FileServerAPI
 type FileServerAPI interface {
-	RangRead(ctx context.Context, path, opt string, offset, size int) (*RangReadResp, error)
+	RangRead(ctx context.Context, req *RangReadReq) (*RangReadResp, error)
 }
 
 type fileServerAPI struct {
 	client http.Client
+	host   string
 }
 
 // NewFileServer NewFileServer
-func NewFileServer(conf Config) FileServerAPI {
+func NewFileServer(conf FileServerConfig) FileServerAPI {
 	return &fileServerAPI{
-		client: New(conf),
+		client: New(conf.InternalNet),
+		host:   conf.Host,
 	}
 }
 
@@ -40,15 +47,9 @@ type RangReadReq struct {
 	Size   int    `json:"size"`
 }
 
-func (file *fileServerAPI) RangRead(ctx context.Context, path, opt string, offset, size int) (*RangReadResp, error) {
-	params := &RangReadReq{
-		Path:   path,
-		Opt:    opt,
-		Offset: offset,
-		Size:   size,
-	}
+func (file *fileServerAPI) RangRead(ctx context.Context, req *RangReadReq) (*RangReadResp, error) {
 	resp := &RangReadResp{}
-	err := client.POST(ctx, &file.client, rangeReadURL, params, resp)
+	err := client.POST(ctx, &file.client, file.host+rangeReadURL, req, resp)
 	if err != nil {
 		return nil, err
 	}
