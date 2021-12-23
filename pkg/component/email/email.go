@@ -12,10 +12,6 @@ import (
 	"time"
 )
 
-const (
-	minioFileServer = "minio"
-)
-
 var (
 	// Host represents the host of the SMTP server.
 	host string
@@ -120,7 +116,6 @@ func (e *Email) getAttachment(ctx context.Context, path string) ([]byte, error) 
 	if err != nil {
 		fileResp, err := e.fileServer.RangRead(ctx, &client.RangReadReq{
 			Path: path,
-			Opt:  minioFileServer,
 		})
 		if err != nil {
 			return nil, err
