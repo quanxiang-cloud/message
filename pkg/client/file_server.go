@@ -42,10 +42,7 @@ type RangReadResp struct {
 
 // RangReadReq RangReadReq
 type RangReadReq struct {
-	Path   string `json:"path"`
-	Opt    string `json:"opt"`
-	Offset int    `json:"offset"`
-	Size   int    `json:"size"`
+	Path string `json:"path"`
 }
 
 func (file *fileServerAPI) RangRead(ctx context.Context, req *RangReadReq) (*RangReadResp, error) {
