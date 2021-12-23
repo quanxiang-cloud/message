@@ -100,19 +100,20 @@ type letter struct {
 
 type web struct {
 	ID        string                `json:"id"`
-	Types     constant.MessageTypes `json:"types" binding:"-"`  // 1. 系统消息 2、 通知通告'
-	IsSend    bool                  `json:"isSend" binding:"-"` //  1. draft    2.  send
+	Types     constant.MessageTypes `json:"types"`  // 1. 系统消息 2、 通知通告'
+	IsSend    bool                  `json:"isSend"` //  1. draft    2.  send
 	Title     string                `json:"title"`
-	Files     models.Files          `json:"files" binding:"-"`     // 消息附件
-	Receivers models.Receivers      `json:"receivers" binding:"-"` // 接收者
+	Files     models.Files          `json:"files"`     // 消息附件
+	Receivers models.Receivers      `json:"receivers"` // 接收者
 	Content   *content              `json:"contents"`
 }
 
 type email struct {
-	To          []string `json:"to"`
-	Title       string   `json:"title"`
-	Content     *content `json:"contents"`
-	ContentType string   `json:"content_type,omitempty"`
+	To          []string           `json:"to"`
+	Title       string             `json:"title"`
+	Content     *content           `json:"contents"`
+	ContentType string             `json:"content_type,omitempty"`
+	Attachments []event.Attachment `json:"files"` // 消息附件
 }
 
 type content struct {
@@ -292,6 +293,7 @@ func (m *message) createEmail(ctx context.Context, email *email) (*CreateMessage
 		Title:       email.Title,
 		ContentType: email.ContentType,
 		Content:     convertContent.content,
+		Attachments: email.Attachments,
 	}
 	err = m.Send(ctx, message)
 	if err != nil {
