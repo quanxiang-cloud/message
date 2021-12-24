@@ -26,9 +26,5 @@ func (file *fileServerAPI) GetFile(ctx context.Context, path string) ([]byte, er
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
+	return ioutil.ReadAll(resp.Body)
 }

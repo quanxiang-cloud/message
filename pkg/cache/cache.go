@@ -52,7 +52,7 @@ func NewCache(log logr.Logger) (Cache, error) {
 	}
 	return &cache{
 		bigCache: bigCache,
-		log:      log,
+		log:      log.WithName("localCache"),
 	}, nil
 }
 
