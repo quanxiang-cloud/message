@@ -3,6 +3,7 @@ package cache
 import (
 	"flag"
 	"github.com/allegro/bigcache/v3"
+	"github.com/go-logr/logr"
 	"time"
 )
 
@@ -27,12 +28,12 @@ func PrepareCache() {
 	flag.IntVar(&expired, "expired", 10, "time after which entry can be evicted, value is minute")
 	flag.IntVar(&clearTime, "clear-time", 10, "interval between removing expired entries, value is second")
 	flag.IntVar(&maxEntrySize, "max-entry-size", 500, "max entry size in bytes")
-	flag.IntVar(&maxCacheSize, "max-cache-size", 500, "cache will not allocate more memory than this limit, value in MB")
+	flag.IntVar(&maxCacheSize, "max-cache-size", 0, "cache will not allocate more memory than this limit, value in MB")
 	flag.IntVar(&maxEntriesInWindow, "max-entries-in-window", 1000*10*60, "rps * lifeWindow")
 }
 
 // NewCache NewCache
-func NewCache() (Cache, error) {
+func NewCache(log logr.Logger) (Cache, error) {
 	bigCache, err := bigcache.NewBigCache(bigcache.Config{
 		Shards:             shards,
 		LifeWindow:         time.Duration(expired) * time.Minute,
@@ -42,12 +43,16 @@ func NewCache() (Cache, error) {
 		StatsEnabled:       false,
 		Verbose:            false,
 		HardMaxCacheSize:   maxCacheSize,
+		OnRemove: func(key string, entry []byte) {
+			log.Info("remove cache", "remove key", key)
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
 	return &cache{
 		bigCache: bigCache,
+		log:      log,
 	}, nil
 }
 
@@ -58,6 +63,7 @@ type Cache interface {
 }
 
 type cache struct {
+	log      logr.Logger
 	bigCache *bigcache.BigCache
 }
 
