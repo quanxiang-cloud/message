@@ -2,8 +2,9 @@ package client
 
 import (
 	"context"
-	"git.internal.yunify.com/qxp/misc/client"
 	"net/http"
+
+	"github.com/quanxiang-cloud/cabin/tailormade/client"
 )
 
 const (

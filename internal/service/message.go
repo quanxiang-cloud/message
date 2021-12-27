@@ -10,25 +10,20 @@ import (
 	"os"
 	template2 "text/template"
 
-	"github.com/quanxiang-cloud/message/internal/constant"
-
-	"git.internal.yunify.com/qxp/misc/header2"
-	"github.com/quanxiang-cloud/message/pkg/component/event"
-	"gorm.io/gorm"
-
-	"github.com/quanxiang-cloud/message/pkg/client"
-
-	"git.internal.yunify.com/qxp/misc/error2"
-	"git.internal.yunify.com/qxp/misc/id2"
-	"git.internal.yunify.com/qxp/misc/logger"
-	"git.internal.yunify.com/qxp/misc/mysql2"
-	"git.internal.yunify.com/qxp/misc/time2"
-
 	"github.com/go-logr/logr"
+	error2 "github.com/quanxiang-cloud/cabin/error"
+	id2 "github.com/quanxiang-cloud/cabin/id"
+	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
+	"github.com/quanxiang-cloud/cabin/tailormade/header"
+	time2 "github.com/quanxiang-cloud/cabin/time"
+	"github.com/quanxiang-cloud/message/internal/constant"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"github.com/quanxiang-cloud/message/internal/models/mysql"
+	"github.com/quanxiang-cloud/message/pkg/client"
 	"github.com/quanxiang-cloud/message/pkg/code"
+	"github.com/quanxiang-cloud/message/pkg/component/event"
 	"github.com/quanxiang-cloud/message/pkg/config"
+	"gorm.io/gorm"
 )
 
 var messageURL = "%s/api/v1/message/send"
@@ -66,7 +61,8 @@ type message struct {
 
 // NewMessage create
 func NewMessage(conf *config.Config, log logr.Logger) (Message, error) {
-	db, err := mysql2.New(conf.Mysql, logger.Logger)
+	log = log.WithName("service-message")
+	db, err := mysql2.New(conf.Mysql, log)
 	if err != nil {
 		return nil, err
 	}
@@ -83,8 +79,9 @@ func NewMessage(conf *config.Config, log logr.Logger) (Message, error) {
 }
 
 type CreateMessageReq struct {
-	Profile header2.Profile
-	data    `json:",omitempty"`
+	UserID   string `json:"userID,omitempty"`
+	UserName string `json:"userName,omitempty"`
+	data     `json:",omitempty"`
 }
 
 type data struct {
@@ -137,7 +134,7 @@ func (m *message) CreateMessage(ctx context.Context, req *CreateMessageReq) (*Cr
 		return m.createEmail(ctx, req.Email)
 	}
 	if req.Web != nil {
-		return m.createWeb(ctx, req.Web, req.Profile)
+		return m.createWeb(ctx, req.Web, req.UserID, req.UserName)
 	}
 	return nil, nil
 }
@@ -157,7 +154,7 @@ func decodeString(content string) (string, error) {
 	return sprintf, nil
 }
 
-func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profile) (*CreateMessageResp, error) {
+func (m *message) createWeb(ctx context.Context, web *web, userID, userName string) (*CreateMessageResp, error) {
 	// 只有web 需要入库
 	tx := m.db.Begin()
 	var err error
@@ -180,8 +177,8 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 	messages := &models.MessageList{
 		ID:          id2.GenID(),
 		Title:       web.Title,
-		CreatorID:   profile.UserID,
-		CreatorName: profile.UserName,
+		CreatorID:   userID,
+		CreatorName: userName,
 		Types:       web.Types,
 		Status:      constant.Draft,
 		Receivers:   web.Receivers,
@@ -229,7 +226,7 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 				}
 				err = m.recordCreateAndSend(ctx, record, convertContent)
 				if err != nil {
-					m.log.Error(err, " dep recordCreateAndSend error", "Request-ID", logger.STDRequestID(ctx))
+					m.log.Error(err, " dep recordCreateAndSend error", header.GetRequestIDKV(ctx).Fuzzy()...)
 					failCount = failCount + 1
 				}
 			}
@@ -246,7 +243,7 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 			}
 			err := m.recordCreateAndSend(ctx, record, convertContent)
 			if err != nil {
-				m.log.Error(err, "user recordCreateAndSend error", "Request-ID", logger.STDRequestID(ctx))
+				m.log.Error(err, "user recordCreateAndSend error", header.GetRequestIDKV(ctx).Fuzzy()...)
 				failCount = failCount + 1
 			}
 
@@ -261,7 +258,7 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 	}
 	err := m.messageRepo.UpdateCount(m.db, update)
 	if err != nil {
-		m.log.Error(err, "update message count error", "Request-ID", logger.STDRequestID(ctx))
+		m.log.Error(err, "update message count error", header.GetRequestIDKV(ctx).Fuzzy()...)
 	}
 	return nil
 }
@@ -287,7 +284,7 @@ func (m *message) recordCreateAndSend(ctx context.Context, record *models.Record
 	}
 	contentByte, err := json.Marshal(params)
 	if err != nil {
-		logger.Logger.Errorw("err is ")
+		m.log.Error(err, "json marshal", header.GetRequestIDKV(ctx).Fuzzy()...)
 	}
 	message := new(event.Data)
 	message.LetterSpec = &event.LetterSpec{
@@ -356,7 +353,7 @@ func (m *message) convertContent(content *content) (*convertMessage, error) {
 		return nil, err
 	}
 	if t == nil {
-		return nil, error2.NewError(code.ErrNotExistTemplate)
+		return nil, error2.New(code.ErrNotExistTemplate)
 	}
 	t2, err := template2.New("").Parse(t.Content)
 	if err != nil {
@@ -396,7 +393,7 @@ func (m *message) DeleteMessage(ctx context.Context, req *DeleteMessageReq) (*De
 			return nil, err
 		}
 	} else {
-		return nil, error2.NewError(code.ErrDeleteMsState)
+		return nil, error2.New(code.ErrDeleteMsState)
 	}
 	return &DeleteMessageResp{}, nil
 }

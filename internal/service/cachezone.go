@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"git.internal.yunify.com/qxp/misc/redis2"
 	"github.com/go-logr/logr"
+	rdc "github.com/quanxiang-cloud/cabin/tailormade/db/redis"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"github.com/quanxiang-cloud/message/internal/models/redis"
 	"github.com/quanxiang-cloud/message/pkg/client"
@@ -30,7 +30,7 @@ type CacheZone struct {
 func NewCacheZone(ctx context.Context, conf *config.Config, log logr.Logger) (*CacheZone, error) {
 	log = log.WithName("cacheZone")
 
-	redisClient, err := redis2.NewClient(conf.Redis)
+	redisClient, err := rdc.NewClient(conf.Redis)
 	if err != nil {
 		log.Error(err, "new redis client")
 		return nil, err

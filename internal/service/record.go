@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"git.internal.yunify.com/qxp/misc/logger"
-	"git.internal.yunify.com/qxp/misc/mysql2"
+
+	"github.com/go-logr/logr"
+	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	"github.com/quanxiang-cloud/message/internal/constant"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"github.com/quanxiang-cloud/message/internal/models/mysql"
@@ -22,8 +23,9 @@ type Record interface {
 }
 
 // NewRecord create
-func NewRecord(conf *config.Config) (Record, error) {
-	db, err := mysql2.New(conf.Mysql, logger.Logger)
+func NewRecord(conf *config.Config, log logr.Logger) (Record, error) {
+	log = log.WithName("service-record")
+	db, err := mysql2.New(conf.Mysql, log)
 	if err != nil {
 		return nil, err
 	}
@@ -34,14 +36,17 @@ func NewRecord(conf *config.Config) (Record, error) {
 	return &record{
 		conf:        conf,
 		db:          db,
+		log:         log,
 		recordRepo:  mysql.NewRecordRepo(),
 		messageRepo: mysql.NewMessageRepo(),
 	}, nil
 }
 
 type record struct {
-	conf        *config.Config
-	db          *gorm.DB
+	conf *config.Config
+	db   *gorm.DB
+	log  logr.Logger
+
 	recordRepo  models.RecordRepo
 	messageRepo models.MessageRepo
 }
@@ -234,19 +239,19 @@ func (ms *record) RecordList(ctx context.Context, req *RecordListReq) (*RecordLi
 		if err != nil {
 			return nil, err
 		}
-		cloneMsSend(resp.List[i], msSend, mess)
+		ms.cloneMsSend(resp.List[i], msSend, mess)
 	}
 	resp.Total = total
 	return resp, nil
 }
 
-func cloneMsSend(dst *RecordVo, src *models.Record, message *models.MessageList) {
+func (ms *record) cloneMsSend(dst *RecordVo, src *models.Record, message *models.MessageList) {
 	dst.ID = src.ID
 	dst.Title = message.Title
 	dst.Types = src.Types
 	content1, err := decodeString(message.Content)
 	if err != nil {
-		logger.Logger.Errorw("decodeString err", err.Error())
+		ms.log.Error(err, "decode string")
 	}
 	dst.Content = content1
 	dst.CreatedAt = src.CreatedAt

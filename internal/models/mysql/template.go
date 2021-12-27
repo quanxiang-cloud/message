@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	"git.internal.yunify.com/qxp/misc/time2"
+	time2 "github.com/quanxiang-cloud/cabin/time"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"gorm.io/gorm"
 )
