@@ -84,13 +84,17 @@ func (ms *record) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*Cent
 	if err != nil {
 		return nil, err
 	}
+	contents, err := decodeString(message.Content)
+	if err != nil {
+		return nil, err
+	}
 	resp := &CenterMsByIDResp{
 		ID:          record.ID,
 		Title:       message.Title,
 		CreatorName: message.CreatorName,
 		UpdatedAt:   record.CreatedAt,
 		ReadStatus:  record.ReadStatus,
-		Content:     message.Content,
+		Content:     contents,
 		Types:       message.Types,
 		Files:       message.Files,
 	}
@@ -240,7 +244,11 @@ func cloneMsSend(dst *RecordVo, src *models.Record, message *models.MessageList)
 	dst.ID = src.ID
 	dst.Title = message.Title
 	dst.Types = src.Types
-	dst.Content = message.Content
+	content1, err := decodeString(message.Content)
+	if err != nil {
+		logger.Logger.Errorw("decodeString err", err.Error())
+	}
+	dst.Content = content1
 	dst.CreatedAt = src.CreatedAt
 	dst.ReadStatus = src.ReadStatus
 	dst.Files = message.Files

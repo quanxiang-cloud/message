@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -141,6 +142,21 @@ func (m *message) CreateMessage(ctx context.Context, req *CreateMessageReq) (*Cr
 	return nil, nil
 }
 
+func encodeToString(content string) (string, error) {
+	contentByte := []byte(content)
+	return base64.StdEncoding.EncodeToString(contentByte), nil
+}
+
+func decodeString(content string) (string, error) {
+	receiverByte, err := base64.StdEncoding.DecodeString(content) //  解码
+	if err != nil {
+		return "", err
+	}
+	sprintf := fmt.Sprintf("%s", receiverByte)
+
+	return sprintf, nil
+}
+
 func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profile) (*CreateMessageResp, error) {
 	// 只有web 需要入库
 	tx := m.db.Begin()
@@ -155,7 +171,11 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 	convertContent, err := m.convertContent(web.Content)
 	if err != nil {
 		return nil, err
+	}
 
+	base64Content, err := encodeToString(convertContent.content)
+	if err != nil {
+		return nil, err
 	}
 	messages := &models.MessageList{
 		ID:          id2.GenID(),
@@ -167,7 +187,7 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 		Receivers:   web.Receivers,
 		CreatedAt:   time2.NowUnix(),
 		Files:       web.Files,
-		Content:     convertContent.content,
+		Content:     base64Content,
 	}
 	err = m.messageRepo.Create(tx, messages)
 	if err != nil {
@@ -190,7 +210,8 @@ func (m *message) createWeb(ctx context.Context, web *web, profile header2.Profi
 func (m *message) webSend(ctx context.Context, webData *web, messageID, convertContent string) error {
 	var failCount, totalCount int
 	for _, value := range webData.Receivers {
-		if value.Type == models.Department {
+		switch value.Type {
+		case models.Department:
 			userInfo, err := m.userClient.GetUsersByDEPID(ctx, value.ID, 0, 1, 1000)
 			if err != nil {
 				continue
@@ -212,7 +233,7 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 					failCount = failCount + 1
 				}
 			}
-		} else {
+		default:
 			totalCount = totalCount + 1
 			record := &models.Record{
 				ID:           id2.GenID(),
@@ -245,12 +266,29 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 	return nil
 }
 
+// MesContent MesContent
+type mesContent struct {
+	RecordID string `json:"recordID"`
+}
+
 func (m *message) recordCreateAndSend(ctx context.Context, record *models.Record, content string) error {
 	err := m.recordRepo.Create(m.db, record)
 	if err != nil {
 		return err
 	}
-	contentByte, _ := json.Marshal(content)
+	params := struct {
+		Types   string      `json:"types"`
+		Content *mesContent `json:"content"`
+	}{
+		Types: "letter",
+		Content: &mesContent{
+			RecordID: record.ID,
+		},
+	}
+	contentByte, err := json.Marshal(params)
+	if err != nil {
+		logger.Logger.Errorw("err is ")
+	}
 	message := new(event.Data)
 	message.LetterSpec = &event.LetterSpec{
 		ID:      record.ReceiverID,
@@ -388,13 +426,17 @@ func (m *message) GetMesByID(ctx context.Context, req *GetMesByIDReq) (resp *Get
 	if err != nil {
 		return
 	}
+	contents, err := decodeString(ms.Content)
+	if err != nil {
+		return nil, err
+	}
 	resp = &GetMesByIDResp{
 		ID:          ms.ID,
 		Title:       ms.Title,
 		CreatorName: ms.CreatorName,
 		Types:       ms.Types,
 		Receivers:   ms.Receivers,
-		Content:     ms.Content,
+		Content:     contents,
 		Files:       ms.Files,
 		Success:     ms.Success,
 		Fail:        ms.Fail,
