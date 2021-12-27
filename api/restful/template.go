@@ -36,7 +36,7 @@ func (t *Template) CreateTemplate(c *gin.Context) {
 
 	req := &service.CreateTemplateReq{}
 	if err := c.ShouldBind(req); err != nil {
-		t.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		t.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}
@@ -49,7 +49,7 @@ func (t *Template) UpdateTemplate(c *gin.Context) {
 
 	req := &service.UpdateTemplateReq{}
 	if err := c.ShouldBind(req); err != nil {
-		t.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		t.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}
@@ -62,7 +62,7 @@ func (t *Template) DeleteTemplate(c *gin.Context) {
 
 	req := &service.DeleteTemplateReq{}
 	if err := c.ShouldBind(req); err != nil {
-		t.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		t.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}
@@ -76,7 +76,7 @@ func (t *Template) QueryTemplatePage(c *gin.Context) {
 
 	req := &service.QueryTemplateReq{}
 	if err := c.ShouldBind(req); err != nil {
-		t.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		t.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}

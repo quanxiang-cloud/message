@@ -38,7 +38,7 @@ func (m *Record) CenterMsByID(c *gin.Context) {
 
 	req := &service.CenterMsByIDReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -51,7 +51,7 @@ func (m *Record) GetNumber(c *gin.Context) {
 
 	req := &service.GetNumberReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -67,7 +67,7 @@ func (m *Record) AllRead(c *gin.Context) {
 	req := &service.AllReadReq{}
 	req.ReceiverID = c.GetHeader("User-Id")
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -80,7 +80,7 @@ func (m *Record) DeleteByIDs(c *gin.Context) {
 
 	req := &service.DeleteByIDsReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -93,7 +93,7 @@ func (m *Record) ReadByIDs(c *gin.Context) {
 
 	req := &service.ReadByIDsReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
@@ -108,7 +108,7 @@ func (m *Record) GetMesSendList(c *gin.Context) {
 	req.ReceiverID = c.GetHeader("User-Id")
 
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}

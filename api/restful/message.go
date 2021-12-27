@@ -35,7 +35,7 @@ func (m *Message) SaveMessage(c *gin.Context) {
 
 	req := &service.CreateMessageReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}
@@ -50,7 +50,7 @@ func (m *Message) DeleteMessage(c *gin.Context) {
 
 	req := &service.DeleteMessageReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}
@@ -63,7 +63,7 @@ func (m *Message) MessageList(c *gin.Context) {
 
 	req := &service.ListReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}
@@ -76,7 +76,7 @@ func (m *Message) GetMessageByID(c *gin.Context) {
 
 	req := &service.GetMesByIDReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}
@@ -89,14 +89,14 @@ func (m *Message) BatchMessage(c *gin.Context) {
 
 	var batch []service.CreateMessageReq
 	if err := c.ShouldBind(&batch); err != nil {
-		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy())
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		resp.Format(nil, err).Context(c, http.StatusBadRequest)
 		return
 	}
 	for _, message := range batch {
 		_, err := m.message.CreateMessage(c, &message)
 		if err != nil {
-			m.log.Error(err, "send message ", header.GetRequestIDKV(ctx).Fuzzy())
+			m.log.Error(err, "send message ", header.GetRequestIDKV(ctx).Fuzzy()...)
 		}
 
 	}
