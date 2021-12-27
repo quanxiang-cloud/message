@@ -2,54 +2,29 @@ package client
 
 import (
 	"context"
-	"git.internal.yunify.com/qxp/misc/client"
+	"io/ioutil"
 	"net/http"
 )
 
-const (
-	fileServer   = "/api/v1/fileserver"
-	rangeReadURL = fileServer + "/rangRead"
-)
-
-// FileServerConfig FileServerConfig
-type FileServerConfig struct {
-	InternalNet Config
-	Host        string
-}
-
 // FileServerAPI FileServerAPI
 type FileServerAPI interface {
-	RangRead(ctx context.Context, req *RangReadReq) (*RangReadResp, error)
+	GetFile(ctx context.Context, path string) ([]byte, error)
 }
 
 type fileServerAPI struct {
-	client http.Client
-	host   string
+	host string
 }
 
 // NewFileServer NewFileServer
-func NewFileServer(conf FileServerConfig) FileServerAPI {
-	return &fileServerAPI{
-		client: New(conf.InternalNet),
-		host:   conf.Host,
-	}
+func NewFileServer() FileServerAPI {
+	return &fileServerAPI{}
 }
 
-// RangReadResp RangReadResp
-type RangReadResp struct {
-	Content []byte `json:"content"`
-}
-
-// RangReadReq RangReadReq
-type RangReadReq struct {
-	Path string `json:"path"`
-}
-
-func (file *fileServerAPI) RangRead(ctx context.Context, req *RangReadReq) (*RangReadResp, error) {
-	resp := &RangReadResp{}
-	err := client.POST(ctx, &file.client, file.host+rangeReadURL, req, resp)
+func (file *fileServerAPI) GetFile(ctx context.Context, path string) ([]byte, error) {
+	resp, err := http.Get(path)
 	if err != nil {
 		return nil, err
 	}
-	return resp, nil
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
 }
