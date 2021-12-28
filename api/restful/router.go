@@ -2,11 +2,11 @@ package restful
 
 import (
 	"context"
-	"github.com/go-logr/logr"
 	"net/http"
 
-	"git.internal.yunify.com/qxp/misc/resp"
 	"github.com/gin-gonic/gin"
+	"github.com/go-logr/logr"
+	"github.com/quanxiang-cloud/cabin/tailormade/resp"
 	"github.com/quanxiang-cloud/message/internal/core"
 	"github.com/quanxiang-cloud/message/internal/service"
 	wm "github.com/quanxiang-cloud/message/pkg/component/letter/websocket"

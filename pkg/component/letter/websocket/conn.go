@@ -3,8 +3,8 @@ package websocket
 import (
 	"context"
 
-	"git.internal.yunify.com/qxp/misc/id2"
 	"github.com/gorilla/websocket"
+	id2 "github.com/quanxiang-cloud/cabin/id"
 )
 
 type Connect struct {

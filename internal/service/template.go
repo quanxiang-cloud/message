@@ -2,12 +2,12 @@ package service
 
 import (
 	"context"
-	"fmt"
 
-	"git.internal.yunify.com/qxp/misc/id2"
-	"git.internal.yunify.com/qxp/misc/logger"
-	"git.internal.yunify.com/qxp/misc/mysql2"
-	"git.internal.yunify.com/qxp/misc/time2"
+	"github.com/go-logr/logr"
+	id2 "github.com/quanxiang-cloud/cabin/id"
+	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
+	"github.com/quanxiang-cloud/cabin/tailormade/header"
+	time2 "github.com/quanxiang-cloud/cabin/time"
 	"github.com/quanxiang-cloud/message/internal/models"
 	"github.com/quanxiang-cloud/message/internal/models/mysql"
 	"github.com/quanxiang-cloud/message/pkg/config"
@@ -60,20 +60,25 @@ type DeleteTemplateResp struct {
 }
 
 type template struct {
-	conf         *config.Config
-	db           *gorm.DB
+	conf *config.Config
+	db   *gorm.DB
+	log  logr.Logger
+
 	templateRepo models.TemplateRepo
 }
 
 // NewTemplate create
-func NewTemplate(conf *config.Config) (Template, error) {
-	db, err := mysql2.New(conf.Mysql, logger.Logger)
+func NewTemplate(conf *config.Config, log logr.Logger) (Template, error) {
+	log = log.WithName("service-template")
+	db, err := mysql2.New(conf.Mysql, log)
 	if err != nil {
 		return nil, err
 	}
 	return &template{
-		conf:         conf,
-		db:           db,
+		conf: conf,
+		db:   db,
+		log:  log,
+
 		templateRepo: mysql.NewTemplateRepo(),
 	}, nil
 }
@@ -93,7 +98,6 @@ func (t *template) CreateTemplate(ctx context.Context, req *CreateTemplateReq) (
 	}
 	err := t.templateRepo.Create(tx, template)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	tx.Commit()
@@ -112,6 +116,7 @@ func (t *template) UpdateTemplate(ctx context.Context, req *UpdateTemplateReq) (
 	template.Name = req.Name
 	err = t.templateRepo.UpdateTemplate(t.db, template)
 	if err != nil {
+		t.log.Error(err, "UpdateTemplate", header.GetRequestIDKV(ctx).Fuzzy()...)
 		return nil, err
 	}
 	return nil, nil

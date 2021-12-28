@@ -3,8 +3,8 @@ package config
 import (
 	"io/ioutil"
 
-	"git.internal.yunify.com/qxp/misc/mysql2"
-	"git.internal.yunify.com/qxp/misc/redis2"
+	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
+	redis2 "github.com/quanxiang-cloud/cabin/tailormade/db/redis"
 	"github.com/quanxiang-cloud/message/pkg/client"
 
 	"gopkg.in/yaml.v2"

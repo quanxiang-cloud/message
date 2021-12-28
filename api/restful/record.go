@@ -1,14 +1,12 @@
 package restful
 
 import (
-	"github.com/go-logr/logr"
 	"net/http"
 
-	"git.internal.yunify.com/qxp/misc/header2"
-	"git.internal.yunify.com/qxp/misc/logger"
-	"git.internal.yunify.com/qxp/misc/resp"
 	"github.com/gin-gonic/gin"
-
+	"github.com/go-logr/logr"
+	"github.com/quanxiang-cloud/cabin/tailormade/header"
+	"github.com/quanxiang-cloud/cabin/tailormade/resp"
 	"github.com/quanxiang-cloud/message/internal/service"
 	"github.com/quanxiang-cloud/message/pkg/config"
 )
@@ -21,85 +19,98 @@ type Record struct {
 
 // NewRecord NewRecord
 func NewRecord(conf *config.Config, log logr.Logger) (*Record, error) {
+	log = log.WithName("restful-record")
 
-	m, err := service.NewRecord(conf)
-
+	m, err := service.NewRecord(conf, log)
 	if err != nil {
 		return nil, err
 	}
+
 	return &Record{
 		record: m,
-		log:    log.WithName("controller record "),
+		log:    log,
 	}, nil
 }
 
 // CenterMsByID find message by id
 func (m *Record) CenterMsByID(c *gin.Context) {
+	ctx := header.MutateContext(c)
+
 	req := &service.CenterMsByIDReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c).String)
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.record.CenterMsByID(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.CenterMsByID(ctx, req)).Context(c)
 }
 
 //GetNumber  dep  reciver get not read number
 func (m *Record) GetNumber(c *gin.Context) {
+	ctx := header.MutateContext(c)
+
 	req := &service.GetNumberReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c).String)
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	req.ReceiverID = header2.GetProfile(c).UserID
-	resp.Format(m.record.GetNumber(logger.CTXTransfer(c), req)).Context(c)
+	req.ReceiverID = c.GetHeader("User-Id")
+	resp.Format(m.record.GetNumber(ctx, req)).Context(c)
 
 }
 
 // AllRead update already read basis of receiverID
 func (m *Record) AllRead(c *gin.Context) {
+	ctx := header.MutateContext(c)
+
 	req := &service.AllReadReq{}
-	req.ReceiverID = header2.GetProfile(c).UserID
+	req.ReceiverID = c.GetHeader("User-Id")
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c).String)
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.record.AllRead(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.AllRead(ctx, req)).Context(c)
 }
 
 //DeleteByIDs  delete message by IDs
 func (m *Record) DeleteByIDs(c *gin.Context) {
+	ctx := header.MutateContext(c)
+
 	req := &service.DeleteByIDsReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c).String)
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.record.DeleteByIDs(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.DeleteByIDs(ctx, req)).Context(c)
 }
 
 // ReadByIDs read message by Ids
 func (m *Record) ReadByIDs(c *gin.Context) {
+	ctx := header.MutateContext(c)
+
 	req := &service.ReadByIDsReq{}
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c).String)
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.record.ReadByIDs(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.ReadByIDs(ctx, req)).Context(c)
 }
 
 // GetMesSendList get by condition
 func (m *Record) GetMesSendList(c *gin.Context) {
+	ctx := header.MutateContext(c)
+
 	req := &service.RecordListReq{}
-	req.ReceiverID = header2.GetProfile(c).UserID
+	req.ReceiverID = c.GetHeader("User-Id")
 
 	if err := c.ShouldBind(req); err != nil {
-		m.log.Error(err, "should bind", "requestID", logger.GINRequestID(c).String)
+		m.log.Error(err, "should bind", header.GetRequestIDKV(ctx).Fuzzy()...)
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	resp.Format(m.record.RecordList(logger.CTXTransfer(c), req)).Context(c)
+	resp.Format(m.record.RecordList(ctx, req)).Context(c)
 }
