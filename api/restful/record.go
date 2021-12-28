@@ -28,7 +28,7 @@ func NewRecord(conf *config.Config, log logr.Logger) (*Record, error) {
 
 	return &Record{
 		record: m,
-		log:    log.WithName("controller record "),
+		log:    log,
 	}, nil
 }
 
