@@ -28,7 +28,6 @@ CREATE TABLE  `message_list`
    `fail`                 SMALLINT,
    `files`                TEXT,
    `created_at`           BIGINT(20),
-   `updated_at`           BIGINT(20),
    PRIMARY KEY (`id`)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

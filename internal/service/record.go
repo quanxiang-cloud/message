@@ -64,7 +64,7 @@ type CenterMsByIDResp struct {
 	Title       string                `json:"title"`
 	CreatorName string                `json:"creatorName"`
 	ReadStatus  constant.ReadStatus   `json:"readStatus"`
-	UpdatedAt   int64                 `json:"updateAt"`
+	CreatedAt   int64                 `json:"createdAt"`
 	Files       models.Files          `json:"files"`
 	Types       constant.MessageTypes `json:"types"`
 }
@@ -97,7 +97,7 @@ func (ms *record) CenterMsByID(ctx context.Context, req *CenterMsByIDReq) (*Cent
 		ID:          record.ID,
 		Title:       message.Title,
 		CreatorName: message.CreatorName,
-		UpdatedAt:   record.CreatedAt,
+		CreatedAt:   record.CreatedAt,
 		ReadStatus:  record.ReadStatus,
 		Content:     contents,
 		Types:       message.Types,
