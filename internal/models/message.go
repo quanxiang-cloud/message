@@ -40,8 +40,6 @@ type MessageList struct {
 	Files Files
 
 	CreatedAt int64
-
-	UpdatedAt int64
 }
 
 // Files Files

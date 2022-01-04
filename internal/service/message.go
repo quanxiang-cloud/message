@@ -413,6 +413,7 @@ type GetMesByIDResp struct {
 	Files       models.Files          `json:"files"`
 	CreatorName string                `json:"creatorName"`
 	Success     int                   `json:"success"`
+	CreatedAt   int64                 `json:"createdAt"`
 	Fail        int                   `json:"fail"`
 	SendNum     int                   `json:"sendNum"`
 }
@@ -436,6 +437,7 @@ func (m *message) GetMesByID(ctx context.Context, req *GetMesByIDReq) (resp *Get
 		Content:     contents,
 		Files:       ms.Files,
 		Success:     ms.Success,
+		CreatedAt:   ms.CreatedAt,
 		Fail:        ms.Fail,
 		SendNum:     ms.SendNum,
 	}
