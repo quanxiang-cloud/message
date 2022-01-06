@@ -274,7 +274,7 @@ func (m *message) recordCreateAndSend(ctx context.Context, record *models.Record
 		return err
 	}
 	params := struct {
-		Types   string      `json:"types"`
+		Types   string      `json:"type"`
 		Content *mesContent `json:"content"`
 	}{
 		Types: "letter",
