@@ -73,8 +73,8 @@ func (e *Email) Send(ctx context.Context, data *event.EmailSpec) error {
 	m.SetAddressHeader("From", sender, alias)
 	m.SetHeader("To", data.To...)
 	m.SetHeader("Subject", data.Title)
-	if data.Content == "" {
-		data.Content = "text/html"
+	if data.ContentType == "" {
+		data.ContentType = "text/html"
 	}
 	m.SetBody(data.ContentType, data.Content)
 	for _, attach := range data.Attachments {
