@@ -66,11 +66,11 @@ func (e *Email) Scaffold(ctx context.Context, data event.Data) error {
 	if data.EmailSpec == nil {
 		return event.ErrDataIsNil
 	}
+	e.warningData(ctx, data.EmailSpec)
 	return e.Send(ctx, data.EmailSpec)
 }
 
-// Send Send
-func (e *Email) Send(ctx context.Context, data *event.EmailSpec) error {
+func (e *Email) warningData(ctx context.Context, data *event.EmailSpec) error {
 	toList := make([]string, 0, len(data.To))
 	for _, t := range data.To {
 		_, err := mail.ParseAddress(t)
@@ -80,9 +80,15 @@ func (e *Email) Send(ctx context.Context, data *event.EmailSpec) error {
 		}
 		toList = append(toList, t)
 	}
+	data.To = toList
+	return nil
+}
+
+// Send Send
+func (e *Email) Send(ctx context.Context, data *event.EmailSpec) error {
 	m := gomail.NewMessage()
 	m.SetAddressHeader("From", sender, alias)
-	m.SetHeader("To", toList...)
+	m.SetHeader("To", data.To...)
 	m.SetHeader("Subject", data.Title)
 	if data.ContentType == "" {
 		data.ContentType = "text/html"
