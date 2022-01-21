@@ -68,7 +68,6 @@ func (e *Email) Scaffold(ctx context.Context, data event.Data) error {
 	}
 	err := e.warningData(ctx, data.EmailSpec)
 	if err != nil {
-		e.log.Error(err, "email pre-check fail")
 		return err
 	}
 	return e.Send(ctx, data.EmailSpec)
