@@ -3,12 +3,14 @@ package email
 import (
 	"context"
 	"flag"
+	"io"
+	"net/mail"
+
 	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/pkg/cache"
 	"github.com/quanxiang-cloud/message/pkg/client"
 	"github.com/quanxiang-cloud/message/pkg/component/event"
 	"gopkg.in/gomail.v2"
-	"io"
 )
 
 var (
@@ -64,7 +66,25 @@ func (e *Email) Scaffold(ctx context.Context, data event.Data) error {
 	if data.EmailSpec == nil {
 		return event.ErrDataIsNil
 	}
+	err := e.warningData(ctx, data.EmailSpec)
+	if err != nil {
+		return err
+	}
 	return e.Send(ctx, data.EmailSpec)
+}
+
+func (e *Email) warningData(ctx context.Context, data *event.EmailSpec) error {
+	toList := make([]string, 0, len(data.To))
+	for _, t := range data.To {
+		_, err := mail.ParseAddress(t)
+		if err != nil {
+			e.log.Error(err, "email address format error")
+			continue
+		}
+		toList = append(toList, t)
+	}
+	data.To = toList
+	return nil
 }
 
 // Send Send
