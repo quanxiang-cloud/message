@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-logr/logr"
 	id2 "github.com/quanxiang-cloud/cabin/id"
+	"github.com/quanxiang-cloud/cabin/logger"
 	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	"github.com/quanxiang-cloud/cabin/tailormade/header"
 	time2 "github.com/quanxiang-cloud/cabin/time"
@@ -70,7 +71,7 @@ type template struct {
 // NewTemplate create
 func NewTemplate(conf *config.Config, log logr.Logger) (Template, error) {
 	log = log.WithName("service-template")
-	db, err := mysql2.New(conf.Mysql, log)
+	db, err := mysql2.New(conf.Mysql, logger.NewFromLogr(log))
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +88,7 @@ func NewTemplate(conf *config.Config, log logr.Logger) (Template, error) {
 func (t *template) CreateTemplate(ctx context.Context, req *CreateTemplateReq) (*CreateTemplateResp, error) {
 	tx := t.db.Begin()
 	template := &models.Template{
-		ID:        id2.GenID(),
+		ID:        id2.BaseUUID(),
 		Name:      req.Name,
 		Title:     req.Title,
 		Content:   req.Content,

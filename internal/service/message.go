@@ -10,9 +10,11 @@ import (
 	"os"
 	template2 "text/template"
 
+	orgClient "git.internal.yunify.com/qxp/organizations/pkg/client"
 	"github.com/go-logr/logr"
 	error2 "github.com/quanxiang-cloud/cabin/error"
 	id2 "github.com/quanxiang-cloud/cabin/id"
+	"github.com/quanxiang-cloud/cabin/logger"
 	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	"github.com/quanxiang-cloud/cabin/tailormade/header"
 	time2 "github.com/quanxiang-cloud/cabin/time"
@@ -62,7 +64,7 @@ type message struct {
 // NewMessage create
 func NewMessage(conf *config.Config, log logr.Logger) (Message, error) {
 	log = log.WithName("service-message")
-	db, err := mysql2.New(conf.Mysql, log)
+	db, err := mysql2.New(conf.Mysql, logger.NewFromLogr(log))
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +177,7 @@ func (m *message) createWeb(ctx context.Context, web *web, userID, userName stri
 		return nil, err
 	}
 	messages := &models.MessageList{
-		ID:          id2.GenID(),
+		ID:          id2.BaseUUID(),
 		Title:       web.Title,
 		CreatorID:   userID,
 		CreatorName: userName,
@@ -209,19 +211,22 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 	for _, value := range webData.Receivers {
 		switch value.Type {
 		case models.Department:
-			userInfo, err := m.userClient.GetUsersByDEPID(ctx, value.ID, 0, 1, 1000)
+			ur, err := m.userClient.GetUsersByDepID(ctx, &orgClient.GetUsersByDepIDRequest{
+				DepID: value.ID,
+			})
 			if err != nil {
 				continue
 			}
-			for _, u := range userInfo {
+
+			for _, u := range ur.Users {
 				totalCount = totalCount + 1
 				record := &models.Record{
-					ID:           id2.GenID(),
+					ID:           id2.BaseUUID(),
 					ListID:       messageID,
 					ReadStatus:   constant.NotRead,
 					Types:        webData.Types,
 					ReceiverID:   u.ID,
-					ReceiverName: u.UserName,
+					ReceiverName: u.Name,
 					CreatedAt:    time2.NowUnix(),
 				}
 				err = m.recordCreateAndSend(ctx, record, convertContent)
@@ -233,7 +238,7 @@ func (m *message) webSend(ctx context.Context, webData *web, messageID, convertC
 		default:
 			totalCount = totalCount + 1
 			record := &models.Record{
-				ID:           id2.GenID(),
+				ID:           id2.BaseUUID(),
 				Types:        webData.Types,
 				ListID:       messageID,
 				ReadStatus:   constant.NotRead,

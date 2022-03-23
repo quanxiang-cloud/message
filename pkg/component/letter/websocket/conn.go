@@ -15,7 +15,7 @@ type Connect struct {
 }
 
 func NewConn(ctx context.Context, id string, conn *websocket.Conn) *Connect {
-	uuid := id2.GenID()
+	uuid := id2.BaseUUID()
 	return &Connect{
 		ctx:    ctx,
 		id:     id,
