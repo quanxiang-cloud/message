@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	"github.com/quanxiang-cloud/cabin/logger"
 	mysql2 "github.com/quanxiang-cloud/cabin/tailormade/db/mysql"
 	"github.com/quanxiang-cloud/message/internal/constant"
 	"github.com/quanxiang-cloud/message/internal/models"
@@ -25,7 +26,7 @@ type Record interface {
 // NewRecord create
 func NewRecord(conf *config.Config, log logr.Logger) (Record, error) {
 	log = log.WithName("service-record")
-	db, err := mysql2.New(conf.Mysql, log)
+	db, err := mysql2.New(conf.Mysql, logger.NewFromLogr(log))
 	if err != nil {
 		return nil, err
 	}
