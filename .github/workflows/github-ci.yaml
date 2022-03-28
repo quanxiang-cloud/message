@@ -32,10 +32,10 @@ jobs:
       - run: go mod tidy
       - run: go mod vendor
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }} ko build -t=${IMAGE_TAG} --bare --sbom=none ./cmd/${{ env.PROJECT_MESSAGE }}/.
-      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }} ko build -t=${IMAGE_TAG} --bare --sbom=none ./cmd/${{ env.PROJECT_AUTH }}/.
-      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }} ko build -t=${IMAGE_TAG} --bare --sbom=none ./cmd/${{ env.PROJECT_LETTER }}/.
-      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }} ko build -t=${IMAGE_TAG} --bare --sbom=none ./cmd/${{ env.PROJECT_EMAIL }}/.
+      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }} ko build -v -t=latest --bare --sbom=none ./cmd/${{ env.PROJECT_MESSAGE }}/.
+      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }} ko build -v -t=latest --bare --sbom=none ./cmd/${{ env.PROJECT_AUTH }}/.
+      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }} ko build -v -t=latest --bare --sbom=none ./cmd/${{ env.PROJECT_LETTER }}/.
+      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }} ko build -v -t=latest --bare --sbom=none ./cmd/${{ env.PROJECT_EMAIL }}/.
 
   deploy_test:
     runs-on: self-hosted
