@@ -7,15 +7,21 @@ env:
   IMAGE_PREFIX: dockerhub.qingcloud.com/lowcode
 on: [push, pull_request]
 jobs:
+  lint:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - run: golint -set_exit_status $(go list ./... | grep -v /vendor/)
   test:
     runs-on: self-hosted
+    needs: lint
     steps:
       - run: go test ./...
       - run: go test -cover ./...
 
   deploy_alpha:
     runs-on: self-hosted
-    needs: [ test ]
+    needs: [ lint,test ]
     if: github.ref == 'refs/heads/alpha'
     steps:
       - run: GOOS=linux GOOSARCH=amd64 go build -o ${{ env.PROJECT_NAME }} ./cmd/.
@@ -26,7 +32,7 @@ jobs:
 
   build_test:
     runs-on: self-hosted
-    needs: [ test ]
+    needs: [lint,test]
     if: startsWith(github.ref, 'refs/heads/release')
     steps:
       - run: go mod tidy
@@ -47,7 +53,7 @@ jobs:
 
   build_staging:
     runs-on: self-hosted
-    needs: [ test ]
+    needs: [lint,test]
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - run: echo ${{ github.ref_type }}
@@ -77,7 +83,7 @@ jobs:
 
   deploy_test:
     runs-on: self-hosted
-    needs: [test,build_test]
+    needs: [lint,test,build_test]
     if: startsWith(github.ref, 'refs/heads/release')
     steps:
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
@@ -88,7 +94,7 @@ jobs:
 
   deploy_staging:
     runs-on: self-hosted
-    needs: [test,build_staging]
+    needs: [lint,test,build_staging]
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
@@ -96,4 +102,3 @@ jobs:
       - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_EMAIL }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
       - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_LETTER }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
       - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_AUTH }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
-    
