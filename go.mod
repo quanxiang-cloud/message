@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/allegro/bigcache/v3 v3.0.1
-	github.com/dapr/go-sdk v1.3.0
+	github.com/dapr/go-sdk v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-logr/logr v1.2.2
 	github.com/go-logr/zapr v1.2.2
