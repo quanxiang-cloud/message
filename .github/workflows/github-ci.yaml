@@ -1,0 +1,105 @@
+name: message
+env:
+  PROJECT_MESSAGE: message
+  PROJECT_EMAIL: email
+  PROJECT_LETTER: letter
+  PROJECT_AUTH: auth
+  IMAGE_PREFIX: dockerhub.qingcloud.com/lowcode
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - run: golint -set_exit_status $(go list ./... | grep -v /vendor/)
+  test:
+    runs-on: self-hosted
+    needs: lint
+    steps:
+      - run: go test ./...
+      - run: go test -cover ./...
+
+  deploy_alpha:
+    runs-on: self-hosted
+    needs: [ lint,test ]
+    if: github.ref == 'refs/heads/alpha'
+    steps:
+      - run: GOOS=linux GOOSARCH=amd64 go build -o ${{ env.PROJECT_NAME }} ./cmd/.
+      - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_MESSAGE }}
+      - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_EMAIL }}
+      - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_LETTER }}
+      - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_AUTH }}
+
+  build_test:
+    runs-on: self-hosted
+    needs: [lint,test]
+    if: startsWith(github.ref, 'refs/heads/release')
+    steps:
+      - run: go mod tidy
+      - run: go mod vendor
+      - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG .
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG
+      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG
+      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG .
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG
+      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG
+      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG .
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG
+      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG
+      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG .
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG
+      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG
+
+  build_staging:
+    runs-on: self-hosted
+    needs: [lint,test]
+    if: ${{ github.ref_type == 'tag' }}
+    steps:
+      - run: echo ${{ github.ref_type }}
+      - run: go mod tidy
+      - run: go mod vendor
+      - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG .
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG
+      - run: docker tag ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:latest
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:latest
+      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG
+      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG .
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG
+      - run: docker tag ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:latest
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:latest
+      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG
+      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG .
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG
+      - run: docker tag ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:latest
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:latest
+      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG
+      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG .
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG
+      - run: docker tag ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:latest
+      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:latest
+      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG
+
+  deploy_test:
+    runs-on: self-hosted
+    needs: [lint,test,build_test]
+    if: startsWith(github.ref, 'refs/heads/release')
+    steps:
+      - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG $GITHUB_REF_NAME
+
+  deploy_staging:
+    runs-on: self-hosted
+    needs: [lint,test,build_staging]
+    if: ${{ github.ref_type == 'tag' }}
+    steps:
+      - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_MESSAGE }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
+      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_EMAIL }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
+      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_LETTER }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
+      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_AUTH }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
+    
