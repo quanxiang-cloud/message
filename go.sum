@@ -927,6 +927,8 @@ github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40T
 github.com/quanxiang-cloud/cabin v0.0.4/go.mod h1:/H6paYmIp5DQaTRdHT5k//ced2DK83c7Ju8u8MT3QQc=
 github.com/quanxiang-cloud/cabin v0.0.6 h1:uxerBHGsIdKneFnjV2lyYsXdNTrunvlG28lDWKkHbbQ=
 github.com/quanxiang-cloud/cabin v0.0.6/go.mod h1:/H6paYmIp5DQaTRdHT5k//ced2DK83c7Ju8u8MT3QQc=
+github.com/quanxiang-cloud/organizations v0.0.0-20220328080332-68310c478aaa h1:N0CW+oGM06AShUqJ8gO4uKJ7NfSiTSrAu22g4yrZUqg=
+github.com/quanxiang-cloud/organizations v0.0.0-20220328080332-68310c478aaa/go.mod h1:IDH/LrG5Zp/QSTvuHU24gEMNQNLpHFdbgTxLu5pog+o=
 github.com/quanxiang-cloud/search v0.0.0-20220318062544-e927094de75a/go.mod h1:vFmG5ZMyQsv9RZ4B5YHn8cY+BnsyIGoGLIqOHyGQDP8=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
@@ -1028,12 +1030,10 @@ github.com/toolkits/concurrent v0.0.0-20150624120057-a4371d70e3e3/go.mod h1:QDlp
 github.com/trusch/grpc-proxy v0.0.0-20190529073533-02b64529f274/go.mod h1:dzrPb02OTNDVimdCCBR1WAPu9a69n3VnfDyCX/GT/gE=
 github.com/tv42/httpunix v0.0.0-20150427012821-b75d8614f926/go.mod h1:9ESjWnEqriFuLhtthL60Sar/7RFoluCcXsuvEwTV5KM=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
+github.com/ugorji/go v1.1.7 h1:/68gy2h+1mWMrwZFeD1kQialdSzAb432dtpeJ42ovdo=
 github.com/ugorji/go v1.1.7/go.mod h1:kZn38zHttfInRq0xu/PH0az30d+z6vm202qpg1oXVMw=
-github.com/ugorji/go v1.1.13 h1:nB3O5kBSQGjEQAcfe1aLUYuxmXdFKmYgBZhY32rQb6Q=
-github.com/ugorji/go v1.1.13/go.mod h1:jxau1n+/wyTGLQoCkjok9r5zFa/FxT6eI5HiHKQszjc=
+github.com/ugorji/go/codec v1.1.7 h1:2SvQaVZ1ouYrrKKwoSk2pzd4A9evlKJb9oTL+OaLUSs=
 github.com/ugorji/go/codec v1.1.7/go.mod h1:Ax+UKWsSmolVDwsd+7N3ZtXu+yMGCf907BLYF3GoBXY=
-github.com/ugorji/go/codec v1.1.13 h1:013LbFhocBoIqgHeIHKlV4JWYhqogATYWZhIcH0WHn4=
-github.com/ugorji/go/codec v1.1.13/go.mod h1:oNVt3Dq+FO91WNQ/9JnHKQP2QJxTzoN7wCBFCq1OeuU=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=
 github.com/urfave/cli/v2 v2.3.0/go.mod h1:LJmUH05zAU44vOAcrfzZQKsZbVcdbOG8rtL3/XcUArI=

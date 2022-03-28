@@ -3,8 +3,8 @@ package client
 import (
 	"time"
 
-	"git.internal.yunify.com/qxp/organizations/pkg/client"
 	cabinclient "github.com/quanxiang-cloud/cabin/tailormade/client"
+	"github.com/quanxiang-cloud/organizations/pkg/client"
 )
 
 type User interface {

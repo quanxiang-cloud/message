@@ -10,7 +10,6 @@ import (
 	"os"
 	template2 "text/template"
 
-	orgClient "git.internal.yunify.com/qxp/organizations/pkg/client"
 	"github.com/go-logr/logr"
 	error2 "github.com/quanxiang-cloud/cabin/error"
 	id2 "github.com/quanxiang-cloud/cabin/id"
@@ -25,6 +24,7 @@ import (
 	"github.com/quanxiang-cloud/message/pkg/code"
 	"github.com/quanxiang-cloud/message/pkg/component/event"
 	"github.com/quanxiang-cloud/message/pkg/config"
+	orgClient "github.com/quanxiang-cloud/organizations/pkg/client"
 	"gorm.io/gorm"
 )
 
