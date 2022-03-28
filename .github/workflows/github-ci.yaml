@@ -24,7 +24,7 @@ jobs:
       - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_LETTER }}
       - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_AUTH }}
 
-  build_test:
+  build:
     runs-on: self-hosted
     needs: [ test ]
     if: startsWith(github.ref, 'refs/heads/release')
@@ -32,52 +32,14 @@ jobs:
       - run: go mod tidy
       - run: go mod vendor
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG .
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG
-      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG
-      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG .
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG
-      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG
-      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG .
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG
-      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG
-      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG .
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG
-      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG
-
-  build_staging:
-    runs-on: self-hosted
-    needs: [ test ]
-    if: ${{ github.ref_type == 'tag' }}
-    steps:
-      - run: echo ${{ github.ref_type }}
-      - run: go mod tidy
-      - run: go mod vendor
-      - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG .
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG
-      - run: docker tag ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:latest
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:latest
-      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG
-      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG .
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG
-      - run: docker tag ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:latest
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:latest
-      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG
-      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG .
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG
-      - run: docker tag ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:latest
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:latest
-      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG
-      - run: docker build -t ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG .
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG
-      - run: docker tag ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:latest
-      - run: docker push ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:latest
-      - run: docker rmi ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG
+      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }} ko build -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_MESSAGE }}/.
+      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }} ko build -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_AUTH }}/.
+      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }} ko build -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_LETTER }}/.
+      - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }} ko build -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_EMAIL }}/.
 
   deploy_test:
     runs-on: self-hosted
-    needs: [test,build_test]
+    needs: [test,build]
     if: startsWith(github.ref, 'refs/heads/release')
     steps:
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
@@ -88,7 +50,7 @@ jobs:
 
   deploy_staging:
     runs-on: self-hosted
-    needs: [test,build_staging]
+    needs: [test,build]
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
