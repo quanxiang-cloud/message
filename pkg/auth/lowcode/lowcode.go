@@ -10,12 +10,12 @@ import (
 	"github.com/quanxiang-cloud/message/pkg/client"
 )
 
-var authURL = "%s/api/v1/jwt/check"
+var authURL = "%s/api/v1/warden/check"
 
 func init() {
 	jwtHost := os.Getenv("JWT_HOST")
 	if jwtHost == "" {
-		jwtHost = "http://jwt"
+		jwtHost = "http://warden"
 	}
 	authURL = fmt.Sprintf(authURL, jwtHost)
 }
