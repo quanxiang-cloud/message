@@ -7,6 +7,10 @@ env:
   IMAGE_PREFIX: dockerhub.qingcloud.com/lowcode
 on: [push, pull_request]
 jobs:
+  before:
+    runs-on: self-hosted
+    steps:
+     - uses: actions/checkout@v2
   test:
     runs-on: self-hosted
     steps:
@@ -15,7 +19,7 @@ jobs:
 
   deploy_alpha:
     runs-on: self-hosted
-    needs: [ test ]
+    needs: [ before,test ]
     if: github.ref == 'refs/heads/alpha'
     steps:
       - run: GOOS=linux GOOSARCH=amd64 go build -o ${{ env.PROJECT_NAME }} ./cmd/.
@@ -26,7 +30,7 @@ jobs:
 
   build:
     runs-on: self-hosted
-    needs: [ test ]
+    needs: [ before,test ]
     if: startsWith(github.ref, 'refs/heads/release')
     steps:
       - run: go mod tidy
@@ -39,7 +43,7 @@ jobs:
 
   deploy_test:
     runs-on: self-hosted
-    needs: [test,build]
+    needs: [before,test,build]
     if: startsWith(github.ref, 'refs/heads/release')
     steps:
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
@@ -50,7 +54,7 @@ jobs:
 
   deploy_staging:
     runs-on: self-hosted
-    needs: [test,build]
+    needs: [before,test,build]
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
