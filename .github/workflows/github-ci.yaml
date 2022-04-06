@@ -35,6 +35,7 @@ jobs:
     steps:
       - run: go mod tidy
       - run: go mod vendor
+      - run: echo ${{ github.ref_type }} ${{ github.ref }}
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
       - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }} ko build -v -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_MESSAGE }}/.
       - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }} ko build -v -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_AUTH }}/.
@@ -58,7 +59,4 @@ jobs:
     if: ${{ github.ref_type == 'tag' }}
     steps:
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_MESSAGE }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
-      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_EMAIL }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
-      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_LETTER }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
-      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_staging/${{ env.PROJECT_AUTH }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=dockerhub.qingcloud.com/lowcode -n lowcode
+      - run: helm upgrade message /root/quanxiang_charts_staging/${{ env.PROJECT_MESSAGE }} --kubeconfig ~/.kube/config_staging --set image.tag=$IMAGE_TAG --set image.repo=${{ env.IMAGE_PREFIX }} -n lowcode
