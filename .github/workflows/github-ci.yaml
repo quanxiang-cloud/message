@@ -31,7 +31,7 @@ jobs:
   build:
     runs-on: self-hosted
     needs: [ before,test ]
-    if: startsWith(github.ref, 'refs/heads/release')
+    if: startsWith(github.ref, 'refs/heads/release') || ${{ github.ref_type == 'tag' }}
     steps:
       - run: go mod tidy
       - run: go mod vendor
