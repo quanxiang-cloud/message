@@ -17,16 +17,7 @@ jobs:
       - run: go test ./...
       - run: go test -cover ./...
 
-  deploy_alpha:
-    runs-on: self-hosted
-    needs: [ before,test,build ]
-    if: startsWith(github.ref, 'refs/heads/alpha')
-    steps:
-      - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG $GITHUB_REF_NAME
-      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG $GITHUB_REF_NAME
-      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG $GITHUB_REF_NAME
-      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG $GITHUB_REF_NAME
+
   build:
     runs-on: self-hosted
     needs: [ before,test ]
@@ -40,6 +31,16 @@ jobs:
       - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }} ko build -v -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_AUTH }}/.
       - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }} ko build -v -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_LETTER }}/.
       - run: KO_DOCKER_REPO=${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }} ko build -v -t=$IMAGE_TAG --bare --sbom=none ./cmd/${{ env.PROJECT_EMAIL }}/.
+  deploy_alpha:
+    runs-on: self-hosted
+    needs: [ before,test,build ]
+    if: startsWith(github.ref, 'refs/heads/alpha')
+    steps:
+      - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG $GITHUB_REF_NAME
 
   deploy_test:
     runs-on: self-hosted
