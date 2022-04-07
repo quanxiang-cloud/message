@@ -19,14 +19,14 @@ jobs:
 
   deploy_alpha:
     runs-on: self-hosted
-    needs: [ before,test ]
-    if: github.ref == 'refs/heads/alpha'
+    needs: [ before,test,build ]
+    if: startsWith(github.ref, 'refs/heads/release')
     steps:
-      - run: GOOS=linux GOOSARCH=amd64 go build -o ${{ env.PROJECT_NAME }} ./cmd/.
-      - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_MESSAGE }}
-      - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_EMAIL }}
-      - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_LETTER }}
-      - run: /root/github-runners/dev_auto.sh ${{ env.PROJECT_AUTH }}
+      - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_MESSAGE }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_EMAIL }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_LETTER }}:$IMAGE_TAG $GITHUB_REF_NAME
+      - run: /opt/upImage.sh ${{ env.IMAGE_PREFIX }}/${{ env.PROJECT_AUTH }}:$IMAGE_TAG $GITHUB_REF_NAME
 
   build:
     runs-on: self-hosted
