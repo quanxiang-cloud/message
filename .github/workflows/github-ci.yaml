@@ -37,7 +37,7 @@ jobs:
     if: github.ref == 'refs/heads/alpha'
     steps:
       - run: echo IMAGE_TAG="v$(date "+%Y%m%d")-${GITHUB_SHA::7}" >> $GITHUB_ENV
-      - run: helm upgrade ${{ env.PROJECT_NAME }} /root/quanxiang_charts_alpha/${{ env.PROJECT_NAME }} --kubeconfig ~/.kube/config_alpha --set image.tag=$IMAGE_TAG --set image.repo=${{env.IMAGE_PREFIX}} -n lowcode
+      - run: helm upgrade ${{ env.PROJECT_MESSAGE }} /root/quanxiang_charts_alpha/${{ env.PROJECT_MESSAGE }} --kubeconfig ~/.kube/config_alpha --set image.tag=$IMAGE_TAG --set image.repo=${{env.IMAGE_PREFIX}} -n lowcode
   deploy_test:
     runs-on: self-hosted
     needs: [before,test,build]
