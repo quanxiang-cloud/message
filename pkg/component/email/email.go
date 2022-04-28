@@ -57,27 +57,9 @@ func New(ctx context.Context, log logr.Logger) (*Email, error) {
 	if err != nil {
 		return nil, err
 	}
-	dialer := gomail.NewDialer(host, port, username, password)
-	if caCertPath != "" {
-		crtb, err := os.ReadFile(caCertPath)
-		if err != nil {
-			return nil, err
-		}
-		block, crtb := pem.Decode(crtb)
-		if block == nil {
-			return nil, errors.New("invalid PEM certificate")
-		}
-		if block.Type != Certificate {
-			return nil, errors.New("cert not right")
-		}
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		caPool := x509.NewCertPool()
-		caPool.AddCert(cert)
-		dialer.SSL = true
-		dialer.TLSConfig.RootCAs = caPool
+	dialer, err := getMailDialer()
+	if err != nil {
+		return nil, err
 	}
 	return &Email{
 		dialer:      dialer,
@@ -162,4 +144,30 @@ func (e *Email) getAttachment(ctx context.Context, path string) ([]byte, error) 
 		}
 	}
 	return content, nil
+}
+
+func getMailDialer() (*gomail.Dialer, error) {
+	dialer := gomail.NewDialer(host, port, username, password)
+	if caCertPath != "" {
+		crtb, err := os.ReadFile(caCertPath)
+		if err != nil {
+			return nil, err
+		}
+		block, crtb := pem.Decode(crtb)
+		if block == nil {
+			return nil, errors.New("invalid PEM certificate")
+		}
+		if block.Type != Certificate {
+			return nil, errors.New("cert not right")
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		caPool := x509.NewCertPool()
+		caPool.AddCert(cert)
+		dialer.SSL = true
+		dialer.TLSConfig.RootCAs = caPool
+	}
+	return dialer, nil
 }
