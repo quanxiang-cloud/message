@@ -2,9 +2,13 @@ package email
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"flag"
 	"io"
 	"net/mail"
+	"os"
 
 	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/pkg/cache"
@@ -26,6 +30,13 @@ var (
 	alias string
 	// sender sender email.
 	sender string
+	// CA cert file path.
+	caCertPath string
+)
+
+const (
+	//Certificate CA Cert Type
+	Certificate = "CERTIFICATE"
 )
 
 // Prepare Prepare
@@ -37,6 +48,7 @@ func Prepare() {
 	flag.StringVar(&password, "email-password", "", "the password to use to authenticate to the SMTP server")
 	flag.StringVar(&alias, "email-alias", "", "sender alias name")
 	flag.StringVar(&sender, "email-sender", "", "ender email")
+	flag.StringVar(&caCertPath, "ca-cert", "", "CA cert file path")
 }
 
 // New New
@@ -45,8 +57,12 @@ func New(ctx context.Context, log logr.Logger) (*Email, error) {
 	if err != nil {
 		return nil, err
 	}
+	dialer, err := getMailDialer()
+	if err != nil {
+		return nil, err
+	}
 	return &Email{
-		dialer:      gomail.NewDialer(host, port, username, password),
+		dialer:      dialer,
 		log:         log.WithName("email"),
 		attachCache: attachCache,
 		fileServer:  client.NewFileServer(),
@@ -128,4 +144,30 @@ func (e *Email) getAttachment(ctx context.Context, path string) ([]byte, error) 
 		}
 	}
 	return content, nil
+}
+
+func getMailDialer() (*gomail.Dialer, error) {
+	dialer := gomail.NewDialer(host, port, username, password)
+	if caCertPath != "" {
+		crtb, err := os.ReadFile(caCertPath)
+		if err != nil {
+			return nil, err
+		}
+		block, crtb := pem.Decode(crtb)
+		if block == nil {
+			return nil, errors.New("invalid PEM certificate")
+		}
+		if block.Type != Certificate {
+			return nil, errors.New("cert not right")
+		}
+		cert, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		caPool := x509.NewCertPool()
+		caPool.AddCert(cert)
+		dialer.SSL = true
+		dialer.TLSConfig.RootCAs = caPool
+	}
+	return dialer, nil
 }
