@@ -33,7 +33,7 @@ type Bus struct {
 }
 
 func New(ctx context.Context, log logr.Logger, opts ...Option) (*Bus, error) {
-	client, err := daprd.NewClient()
+	client, err := InitDaprClientIfNil()
 	if err != nil {
 		return nil, err
 	}
