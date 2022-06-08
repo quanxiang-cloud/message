@@ -17,6 +17,12 @@ type DaprEvent struct {
 type Data struct {
 	*LetterSpec `json:"letter,omitempty"`
 	*EmailSpec  `json:"email,omitempty"`
+	*Multiple   `json:"multiple,omitempty"`
+}
+
+type Multiple struct {
+	Kind string                 `json:"kind,omitempty"`
+	Data map[string]interface{} `json:"data,omitempty"`
 }
 
 type LetterSpec struct {

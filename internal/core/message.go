@@ -83,6 +83,14 @@ func (b *Bus) Send(ctx context.Context, req *Message) (*SendResp, error) {
 		}
 	}
 
+	if req.Data.Multiple != nil {
+		topic = fmt.Sprintf("%s.%s", b.tenant, req.Data.Multiple.Kind)
+		if err := b.publish(ctx, topic, req.Data); err != nil {
+			b.log.Error(err, "push multiple", "title", req.EmailSpec.Title, "kind", req.Data.Multiple.Kind)
+			return &SendResp{}, err
+		}
+	}
+
 	b.log.Info("publish success")
 	return &SendResp{}, nil
 }
