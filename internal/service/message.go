@@ -87,9 +87,15 @@ type CreateMessageReq struct {
 }
 
 type data struct {
-	Letter *letter `json:"letter"`
-	Email  *email  `json:"email"`
-	Web    *web    `json:"web"`
+	Letter   *letter   `json:"letter"`
+	Email    *email    `json:"email"`
+	Web      *web      `json:"web"`
+	Multiple *multiple `json:"multiple"`
+}
+
+type multiple struct {
+	Kind string
+	Data map[string]interface{}
 }
 
 type letter struct {
@@ -137,6 +143,18 @@ func (m *message) CreateMessage(ctx context.Context, req *CreateMessageReq) (*Cr
 	}
 	if req.Web != nil {
 		return m.createWeb(ctx, req.Web, req.UserID, req.UserName)
+	}
+
+	if req.Multiple != nil {
+		err := m.Send(ctx, &event.Data{
+			Multiple: &event.Multiple{
+				Kind: req.Multiple.Kind,
+				Data: req.Multiple.Data,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return nil, nil
 }
