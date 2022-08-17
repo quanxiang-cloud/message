@@ -2,13 +2,10 @@ package email
 
 import (
 	"context"
-	"crypto/x509"
-	"encoding/pem"
-	"errors"
+	"crypto/tls"
 	"flag"
 	"io"
 	"net/mail"
-	"os"
 
 	"github.com/go-logr/logr"
 	"github.com/quanxiang-cloud/message/pkg/cache"
@@ -32,6 +29,7 @@ var (
 	sender string
 	// CA cert file path.
 	caCertPath string
+	privateKey string
 )
 
 const (
@@ -49,6 +47,8 @@ func Prepare() {
 	flag.StringVar(&alias, "email-alias", "", "sender alias name")
 	flag.StringVar(&sender, "email-sender", "", "ender email")
 	flag.StringVar(&caCertPath, "ca-cert", "", "CA cert file path")
+	flag.StringVar(&privateKey, "private-key", "", "")
+
 }
 
 // New New
@@ -149,25 +149,15 @@ func (e *Email) getAttachment(ctx context.Context, path string) ([]byte, error) 
 func getMailDialer() (*gomail.Dialer, error) {
 	dialer := gomail.NewDialer(host, port, username, password)
 	if caCertPath != "" {
-		crtb, err := os.ReadFile(caCertPath)
+		cert, err := tls.LoadX509KeyPair(caCertPath, privateKey)
 		if err != nil {
 			return nil, err
 		}
-		block, crtb := pem.Decode(crtb)
-		if block == nil {
-			return nil, errors.New("invalid PEM certificate")
+
+		dialer.TLSConfig = &tls.Config{
+			InsecureSkipVerify: true,
+			Certificates:       []tls.Certificate{cert},
 		}
-		if block.Type != Certificate {
-			return nil, errors.New("cert not right")
-		}
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		caPool := x509.NewCertPool()
-		caPool.AddCert(cert)
-		dialer.SSL = true
-		dialer.TLSConfig.RootCAs = caPool
 	}
 	return dialer, nil
 }
